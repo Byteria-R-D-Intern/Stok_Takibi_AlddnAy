@@ -26,13 +26,13 @@ public class OrderPersistenceAdapter implements OrderRepository {
 	public Optional<Order> findById(Long id) { return jpa.findById(id); }
 
 	@Override
-	public List<Order> findByUserId(Long userId) { throw new UnsupportedOperationException(); }
+	public List<Order> findByUserId(Long userId) { return jpa.findByUser_Id(userId); }
 
 	@Override
-	public List<Order> findByStatus(OrderStatus status) { throw new UnsupportedOperationException(); }
+	public List<Order> findByStatus(OrderStatus status) { return jpa.findByStatus(status); }
 
 	@Override
-	public List<Order> findByCreatedAtBetween(Instant from, Instant to) { throw new UnsupportedOperationException(); }
+	public List<Order> findByCreatedAtBetween(Instant from, Instant to) { return jpa.findByCreatedAtBetween(from, to); }
 
 	// Paging destekli ek metotlar
 	public Page<Order> findPageByUserId(Long userId, Pageable pageable) {

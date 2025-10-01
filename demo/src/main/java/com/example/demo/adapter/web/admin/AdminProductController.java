@@ -13,6 +13,10 @@ import com.example.demo.application.usecase.AuditLogUseCase;
 import com.example.demo.domain.model.Product;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,6 +24,7 @@ import jakarta.validation.constraints.NotNull;
 @RestController
 @RequestMapping("/api/admin/products")
 @SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Admin Products", description = "Yönetici ürün işlemleri")
 public class AdminProductController {
 
     private final ProductUseCase productUseCase;
@@ -32,6 +37,7 @@ public class AdminProductController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
+    @Operation(summary = "Ürün oluştur", description = "Yeni ürün ekler")
     public ResponseEntity<CreateProductResponse> create(Authentication auth, @RequestBody CreateProductRequest req) {
         Long id = productUseCase.create(req.name, req.price, req.stock);
         Long actorId = null;
@@ -42,13 +48,15 @@ public class AdminProductController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
+    @Operation(summary = "Ürünleri listele", description = "Tüm ürünleri döner")
     public ResponseEntity<List<Product>> listAll() {
         return ResponseEntity.ok(productUseCase.listAll());
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getById(@PathVariable Long id) {
+    @Operation(summary = "Ürün getir", description = "ID ile ürün detayını döner")
+    public ResponseEntity<Product> getById(@Parameter(description = "Ürün kimliği") @PathVariable Long id) {
         return productUseCase.getById(id)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
@@ -56,7 +64,8 @@ public class AdminProductController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<Void> update(Authentication auth, @PathVariable Long id, @RequestBody UpdateProductRequest req) {
+    @Operation(summary = "Ürün güncelle", description = "Ürün bilgilerini günceller")
+    public ResponseEntity<Void> update(Authentication auth, @Parameter(description = "Ürün kimliği") @PathVariable Long id, @RequestBody UpdateProductRequest req) {
         productUseCase.update(id, req.name, req.price, req.stock);
         Long actorId = null;
         try { actorId = Long.valueOf(auth.getName()); } catch (Exception ignored) {}
@@ -66,7 +75,8 @@ public class AdminProductController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(Authentication auth, @PathVariable Long id) {
+    @Operation(summary = "Ürün sil", description = "Ürünü siler")
+    public ResponseEntity<Void> delete(Authentication auth, @Parameter(description = "Ürün kimliği") @PathVariable Long id) {
         productUseCase.delete(id);
         Long actorId = null;
         try { actorId = Long.valueOf(auth.getName()); } catch (Exception ignored) {}
@@ -75,14 +85,20 @@ public class AdminProductController {
     }
 
     public static class CreateProductRequest {
+        @Schema(description = "Ürün adı")
         @NotBlank public String name;
+        @Schema(description = "Stok")
         @NotNull @Min(0) public Integer stock;
+        @Schema(description = "Fiyat")
         @NotNull public BigDecimal price;
     }
 
     public static class UpdateProductRequest {
+        @Schema(description = "Ürün adı")
         public String name;
+        @Schema(description = "Stok")
         public Integer stock;
+        @Schema(description = "Fiyat")
         public BigDecimal price;
     }
 

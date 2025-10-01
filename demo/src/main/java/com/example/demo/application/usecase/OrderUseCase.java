@@ -30,7 +30,6 @@ public class OrderUseCase {
 
     @Transactional
     public CheckoutResult directCheckout(CheckoutCommand cmd){
-        validate(cmd);
 
         Map<Long,Integer> productIdToQty = mergeItems(cmd);
         BigDecimal total = BigDecimal.ZERO;
@@ -107,29 +106,63 @@ public class OrderUseCase {
         orderRepository.save(o);
     }
 
-    // Admin: durum güncelleme
+    // Kullanıcı: kargo bilgilerini güncelle (kargoya verilmeden önce)
+    public void updateShippingInfo(Long userId, Long orderId, String name, String phone, String address) {
+        Order o = orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
+        if (!o.getUser().getId().equals(userId)) throw new IllegalArgumentException("forbidden");
+        if (o.getStatus() == OrderStatus.SHIPPED || o.getStatus() == OrderStatus.DELIVERED)
+            throw new IllegalStateException("cannot update after shipment");
+        if (isBlank(name) || isBlank(address)) throw new IllegalArgumentException("shippingName and shippingAddress are required");
+        o.setShipping_name(name);
+        o.setShipping_phone(phone);
+        o.setShipping_address(address);
+        orderRepository.save(o);
+    }
+
+
+    public SalesStats stats(java.time.Instant from, java.time.Instant to) {
+        java.util.List<Order> all = orderRepository.findByCreatedAtBetween(from, to);
+        java.math.BigDecimal totalRevenue = java.math.BigDecimal.ZERO;
+        long count = 0;
+        long paid = 0, shipped = 0, delivered = 0, cancelled = 0;
+        for (Order o : all) {
+            if (o.getStatus() == OrderStatus.PAID || o.getStatus() == OrderStatus.SHIPPED || o.getStatus() == OrderStatus.DELIVERED) {
+                if (o.getTotal() != null) totalRevenue = totalRevenue.add(o.getTotal());
+            }
+            count++;
+            switch (o.getStatus()) {
+                case PAID -> paid++;
+                case SHIPPED -> shipped++;
+                case DELIVERED -> delivered++;
+                case CANCELLED -> cancelled++;
+                default -> {}
+            }
+        }
+        return new SalesStats(count, totalRevenue, paid, shipped, delivered, cancelled);
+    }
+
+    public static class SalesStats {
+        public final long totalOrders;
+        public final java.math.BigDecimal totalRevenue;
+        public final long paidOrders;
+        public final long shippedOrders;
+        public final long deliveredOrders;
+        public final long cancelledOrders;
+        public SalesStats(long totalOrders, java.math.BigDecimal totalRevenue, long paid, long shipped, long delivered, long cancelled) {
+            this.totalOrders = totalOrders;
+            this.totalRevenue = totalRevenue;
+            this.paidOrders = paid;
+            this.shippedOrders = shipped;
+            this.deliveredOrders = delivered;
+            this.cancelledOrders = cancelled;
+        }
+    }
+
+   
     public void updateStatus(Long orderId, OrderStatus newStatus) {
         Order o = orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
         o.setStatus(newStatus);
         orderRepository.save(o);
-    }
-
-    private void validate(CheckoutCommand cmd){
-        if (cmd == null ) throw new IllegalArgumentException("command is null");
-
-        if ( cmd.userId == null) throw new IllegalArgumentException("userId is required");
-
-        if (isBlank(cmd.shippingName) || isBlank(cmd.shippingAddress)) 
-            throw new IllegalArgumentException("shippingName and shippingAddress are required");
-
-        if (cmd.items == null || cmd.items.length == 0) 
-           throw new IllegalArgumentException("items must not be empty");
-
-        for (CheckoutItem item : cmd.items){
-            if (item == null || item.productId == null || item.quantity == null || item.quantity < 1)
-                throw new IllegalArgumentException("ürün id si veya quantity boş olamaz");
-        }   
-        
     }
 
 

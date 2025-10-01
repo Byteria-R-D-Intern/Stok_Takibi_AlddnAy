@@ -15,9 +15,13 @@ import com.example.demo.domain.port.TokenProvider;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Auth", description = "Kimlik doğrulama işlemleri")
 public class AuthController {
 
     private final UserUseCase userUseCase;
@@ -30,11 +34,12 @@ public class AuthController {
         this.tokenProvider = tokenProvider;
 	}
 
-	@PostMapping("/login")
-	public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest req) {
+    @PostMapping("/login")
+    @Operation(summary = "Giriş yap", description = "Email/şifre ile giriş ve JWT üretimi")
+    public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest req) {
 		Optional<String> token = userUseCase.login(req.email, req.password);
         return token.map(t -> {
-                    // token üretildi; actor ve target olarak kullanıcı id’sini set edebiliriz
+                    
                     Long actorId = null;
                     try { actorId = tokenProvider.getUserId(t); } catch (Exception ignored) {}
                     auditLogUseCase.log(actorId, "user", actorId, "login", "successful login", null);
@@ -43,8 +48,9 @@ public class AuthController {
 					.orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
 	}
 
-	@PostMapping("/register")
-	public ResponseEntity<TokenResponse> register(@RequestBody RegisterRequest req) {
+    @PostMapping("/register")
+    @Operation(summary = "Kayıt ol", description = "Yeni kullanıcı oluştur ve JWT döndür")
+    public ResponseEntity<TokenResponse> register(@RequestBody RegisterRequest req) {
 		Optional<String> token = userUseCase.register(
 			req.email,
 			req.firstName,
@@ -63,18 +69,25 @@ public class AuthController {
 	}
 
 	// DTOs
-	public static class LoginRequest {
-		@Email @NotBlank public String email;
-		@NotBlank public String password;
-	}
+    public static class LoginRequest {
+        @Schema(description = "Email")
+        @Email @NotBlank public String email;
+        @Schema(description = "Şifre")
+        @NotBlank public String password;
+    }
 
-	public static class RegisterRequest {
-		@Email @NotBlank public String email;
-		@NotBlank public String firstName;
-		@NotBlank public String lastName;
-		@NotBlank public String password;
-		public String role; // optional, default CUSTOMER
-	}
+    public static class RegisterRequest {
+        @Schema(description = "Email")
+        @Email @NotBlank public String email;
+        @Schema(description = "Ad")
+        @NotBlank public String firstName;
+        @Schema(description = "Soyad")
+        @NotBlank public String lastName;
+        @Schema(description = "Şifre")
+        @NotBlank public String password;
+        @Schema(description = "Rol (opsiyonel)")
+        public String role; // optional, default CUSTOMER
+    }
 
 	public static class TokenResponse {
 		public final String token;

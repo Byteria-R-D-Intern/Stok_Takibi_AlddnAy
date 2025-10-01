@@ -18,6 +18,11 @@ public interface OrderJpaRepository extends JpaRepository<Order, Long> {
     Page<Order> findByStatus(OrderStatus status, Pageable pageable);
     Page<Order> findByCreatedAtBetween(Instant from, Instant to, Pageable pageable);
     Page<Order> findByStatusAndCreatedAtBetween(OrderStatus status, Instant from, Instant to, Pageable pageable);
+
+    // List variants used by domain ports
+    java.util.List<Order> findByUser_Id(Long userId);
+    java.util.List<Order> findByStatus(OrderStatus status);
+    java.util.List<Order> findByCreatedAtBetween(Instant from, Instant to);
 }
 
 
