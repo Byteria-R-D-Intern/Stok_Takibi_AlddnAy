@@ -26,6 +26,12 @@ public class ProductPersistenceAdapter implements ProductRepository {
 
 	@Override
 	public List<Product> findByNameContains(String namePart) { return jpa.findByNameContainingIgnoreCase(namePart); }
+
+	@Override
+	public boolean existsByName(String name) { return jpa.existsByName(name); }
+
+	@Override
+	public void deleteById(Long id) { jpa.deleteById(id); }
 }
 
 

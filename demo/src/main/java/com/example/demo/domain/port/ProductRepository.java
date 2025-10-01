@@ -9,6 +9,8 @@ public interface ProductRepository {
 	Optional<Product> findById(Long id);
 	List<Product> findAll();
 	List<Product> findByNameContains(String namePart);
+    boolean existsByName(String name);
+    void deleteById(Long id);
 }
 
 

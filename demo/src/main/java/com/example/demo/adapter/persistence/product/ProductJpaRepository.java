@@ -12,6 +12,7 @@ import com.example.demo.domain.model.Product;
 public interface ProductJpaRepository extends JpaRepository<Product, Long> {
 	List<Product> findByNameContainingIgnoreCase(String namePart);
 	Optional<Product> findByName(String name);
+    boolean existsByName(String name);
 }
 
 

@@ -3,8 +3,8 @@ package com.example.demo.application.usecase;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,7 +13,6 @@ import com.example.demo.domain.model.Order;
 import com.example.demo.domain.model.OrderItem;
 import com.example.demo.domain.model.OrderStatus;
 import com.example.demo.domain.model.Product;
-import com.example.demo.domain.model.User;
 import com.example.demo.domain.port.OrderItemRepository;
 import com.example.demo.domain.port.OrderRepository;
 import com.example.demo.domain.port.ProductRepository;
@@ -31,84 +30,88 @@ public class OrderUseCase {
 
     @Transactional
     public CheckoutResult directCheckout(CheckoutCommand cmd){
-        validate(cmd); // doğrulamalr burada yapılıyor quantity veya gerekli parametrelerin null olması duruömunda hataalr fırlatılıyor.
+        validate(cmd);
 
-        // ürünleri birleştirme işlemi burada yapılıyor.
         Map<Long,Integer> productIdToQty = mergeItems(cmd);
-        
-        BigDecimal total = BigDecimal.ZERO;        // toplam başlangıcı
-        Map<Long, Product> productsById = new HashMap<>();  
-        
-        //Stok ve Fiyat doğrulamsı 
+        BigDecimal total = BigDecimal.ZERO;
+        Map<Long, Product> productsById = new HashMap<>();
+
         for (Map.Entry<Long,Integer> entry : productIdToQty.entrySet()){
             Long productId = entry.getKey();
             Integer qty = entry.getValue();
-        
 
-        
-        Product product = productRepository.findById(productId).orElseThrow(() -> new IllegalArgumentException("ürün bulunamadı" + productId));
+            Product product = productRepository.findById(productId).orElseThrow(java.util.NoSuchElementException::new);
+            if (product.getStock() == null || product.getStock() < qty) {
+                throw new IllegalStateException("ürün stokta yetersiz");
+            }
 
-        if (product.getStock() == null || product.getStock() < qty){   
-            throw new IllegalStateException("ürün stokta yetersiz");
-        }   
-        
-        //Sipariş geçişinde ürnünün fiyatı değişmemesi lazım.Siparis anınadaki fiyat tutuluyor
-        BigDecimal unitPriceSnapshot = product.getPrice();
+            BigDecimal unitPriceSnapshot = product.getPrice();
+            BigDecimal lineTotal = unitPriceSnapshot.multiply(BigDecimal.valueOf(qty));
+            total = total.add(lineTotal);
+            productsById.put(productId, product);
+        }
 
-        BigDecimal lineTotal = unitPriceSnapshot.multiply(BigDecimal.valueOf(qty));
-
-        total = total.add(lineTotal);
-
-        productsById.put(productId, product);
-
-    }
-    Order order = new Order();             
-    {
-        // user_id set (sadece id set edilmesi yeterli; JPA user_id olarak yazar)
+        Order order = new Order();
         com.example.demo.domain.model.User userRef = new com.example.demo.domain.model.User();
-        userRef.setId(cmd.userId);         
-
+        userRef.setId(cmd.userId);
         order.setUser(userRef);
-        order.setShipping_name(cmd.shippingName);       
+        order.setShipping_name(cmd.shippingName);
         order.setShipping_phone(cmd.shippingPhone);
         order.setShipping_address(cmd.shippingAddress);
-        order.setTotal(total);                         
-        order.setStatus(OrderStatus.PAID);             
-        order.setCreatedAt(Instant.now());             
+        order.setTotal(total);
+        order.setStatus(OrderStatus.PAID);
+        order.setCreatedAt(Instant.now());
+
+        order = orderRepository.save(order);
+
+        for (Map.Entry<Long,Integer> entry : productIdToQty.entrySet()) {
+            Long productId = entry.getKey();
+            Integer qty = entry.getValue();
+            Product product = productsById.get(productId);
+
+            BigDecimal unitPriceSnapshot = product.getPrice();
+            BigDecimal lineTotal = unitPriceSnapshot.multiply(BigDecimal.valueOf(qty));
+
+            OrderItem item = new OrderItem();
+            item.setOrder(order);
+            item.setProduct(product);
+            item.setQuantity(qty);
+            item.setUnitPriceSnapshot(unitPriceSnapshot);
+            item.setLineTotal(lineTotal);
+            orderItemRepository.save(item);
+
+            product.setStock(product.getStock() - qty);
+            productRepository.save(product);
+        }
+
+        return new CheckoutResult(order.getId(), total);
     }
 
-    // Önce order’ı kaydet ki kalemlerde order_id’yi kullanabilelim
-    order = orderRepository.save(order); 
-
-    // Her ürün için OrderItem oluştur ve stok düş
-    for (Map.Entry<Long,Integer> entry : productIdToQty.entrySet()) {
-        Long productId = entry.getKey();
-        Integer qty = entry.getValue();
-        Product product = productsById.get(productId);
-
-        BigDecimal unitPriceSnapshot = product.getPrice();                           
-        BigDecimal lineTotal = unitPriceSnapshot.multiply(BigDecimal.valueOf(qty)); 
-
-        // OrderItem oluştur
-        OrderItem item = new OrderItem();
-        item.setOrder(order);
-        item.setProduct(product);
-        item.setQuantity(qty);
-        item.setUnitPriceSnapshot(unitPriceSnapshot);
-        item.setLineTotal(lineTotal);
-
-        orderItemRepository.save(item);  
-
-        // Stok düş
-        product.setStock(product.getStock() - qty); 
-        productRepository.save(product);            
+    // Kullanıcının kendi siparişleri (basit filtreler üst katta)
+    public List<Order> listUserOrders(Long userId) {
+        return orderRepository.findByUserId(userId);
     }
 
+    public Order getUserOrder(Long userId, Long orderId) {
+        Order o = orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
+        if (!o.getUser().getId().equals(userId)) throw new IllegalArgumentException("forbidden");
+        return o;
+    }
 
+    public void cancelUserOrder(Long userId, Long orderId) {
+        Order o = orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
+        if (!o.getUser().getId().equals(userId)) throw new IllegalArgumentException("forbidden");
+        if (o.getStatus() == OrderStatus.SHIPPED || o.getStatus() == OrderStatus.DELIVERED)
+            throw new IllegalStateException("cannot cancel after shipment");
+        o.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(o);
+    }
 
-
-    return new CheckoutResult(order.getId(), total);
-
+    // Admin: durum güncelleme
+    public void updateStatus(Long orderId, OrderStatus newStatus) {
+        Order o = orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
+        o.setStatus(newStatus);
+        orderRepository.save(o);
     }
 
     private void validate(CheckoutCommand cmd){
