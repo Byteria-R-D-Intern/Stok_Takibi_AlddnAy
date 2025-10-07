@@ -30,7 +30,7 @@ public class OpenApiConfig {
 	public GroupedOpenApi publicApi() {
 		return GroupedOpenApi.builder()
 			.group("public")
-			.pathsToMatch("/api/**")
+			.pathsToMatch("/api/**", "/api/payments/**")
 			.build();
 	}
 }

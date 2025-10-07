@@ -36,13 +36,35 @@ public class Payment {
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;
 
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Column(name = "currency", length = 3, nullable = false)
+    private String currency = "TRY";
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private PaymentStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false)
+    private PaymentMethod method = PaymentMethod.CARD;
+
+    @Column(name = "transaction_id")
+    private String transactionId;
+
+    @Column(name = "card_last4", length = 4)
+    private String cardLast4;
+
     @Lob
     @Column(name = "metadata")
     private String metadata;
+
+    @Column(name = "idempotency_key", unique = true)
+    private String idempotencyKey;
+
+    @Column(name = "error_message")
+    private String errorMessage;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
