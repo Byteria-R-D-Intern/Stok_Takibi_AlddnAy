@@ -30,10 +30,30 @@ public class TokenizationService {
 
     public TokenizationService(
             @Value("${token.ttl-seconds:600}") long ttlSeconds,
-            @Value("${token.secret}") String base64Key
+            @Value("${token.secret:}") String base64Key
     ) {
         this.ttl = Duration.ofSeconds(ttlSeconds);
-        byte[] keyBytes = Base64.getDecoder().decode(base64Key);
+        byte[] keyBytes = null;
+        if (base64Key != null && !base64Key.isBlank()) {
+            try {
+                keyBytes = Base64.getDecoder().decode(base64Key);
+            } catch (IllegalArgumentException e1) {
+                try {
+                    keyBytes = Base64.getUrlDecoder().decode(base64Key);
+                } catch (IllegalArgumentException e2) {
+                    keyBytes = null;
+                }
+            }
+            if (keyBytes != null && keyBytes.length != 16 && keyBytes.length != 24 && keyBytes.length != 32) {
+                keyBytes = null; // invalid size, will fallback
+            }
+        }
+        if (keyBytes == null) {
+            // Fallback: generate random 32-byte AES key so app can start (demo only)
+            byte[] generated = new byte[32];
+            random.nextBytes(generated);
+            keyBytes = generated;
+        }
         this.secretKey = new SecretKeySpec(keyBytes, "AES");
     }
 

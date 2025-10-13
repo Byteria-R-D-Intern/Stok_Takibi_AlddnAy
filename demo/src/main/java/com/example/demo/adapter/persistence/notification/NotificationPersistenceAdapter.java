@@ -1,6 +1,7 @@
 package com.example.demo.adapter.persistence.notification;
 
 
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.stereotype.Repository;
@@ -31,10 +32,10 @@ public class NotificationPersistenceAdapter implements NotificationRepository {
     }
 
     @Override
-    public void markRead(Long id, Long userId) { jpa.markRead(id, userId); }
+    public void markRead(Long id, Long userId) { jpa.markRead(id, userId, Instant.now()); }
 
     @Override
-    public int markAllRead(Long userId) { return jpa.markAllRead(userId); }
+    public int markAllRead(Long userId) { return jpa.markAllRead(userId, Instant.now()); }
 
     @Override
     public void deleteByIdAndUserId(Long id, Long userId) { jpa.deleteByIdAndUserId(id, userId); }

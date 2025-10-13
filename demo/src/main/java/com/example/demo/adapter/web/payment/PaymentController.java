@@ -41,7 +41,8 @@ public class PaymentController {
             req.method,
             req.cardLast4,
             idempotencyKey,
-            req.metadata
+            req.metadata,
+            req.paymentToken
         );
         return new ResponseEntity<>(p, p.getStatus().name().equals("SUCCEEDED") ? HttpStatus.CREATED : HttpStatus.ACCEPTED);
     }
@@ -68,6 +69,8 @@ public class PaymentController {
         public PaymentMethod method;
         public String cardLast4;
         public String metadata;
+        // Tokenized card from TokenizationService; PAN client'ten gelmez
+        public String paymentToken;
     }
 }
 

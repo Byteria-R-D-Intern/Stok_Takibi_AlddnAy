@@ -58,7 +58,8 @@ public class OrderUseCase {
         order.setShipping_phone(cmd.shippingPhone);
         order.setShipping_address(cmd.shippingAddress);
         order.setTotal(total);
-        order.setStatus(OrderStatus.PAID);
+        // Order starts as not paid; payment flow will mark PAID when successful
+        order.setStatus(OrderStatus.DRAFT);
         order.setCreatedAt(Instant.now());
 
         order = orderRepository.save(order);
@@ -163,6 +164,11 @@ public class OrderUseCase {
         Order o = orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
         o.setStatus(newStatus);
         orderRepository.save(o);
+    }
+
+    // Admin: fetch by id without user checks
+    public Order getByIdAdmin(Long orderId) {
+        return orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
     }
 
 

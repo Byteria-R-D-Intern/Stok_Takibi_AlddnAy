@@ -26,7 +26,7 @@ public class AdminOrderController {
     @Operation(summary = "Sipariş getir", description = "ID ile siparişi döner")
     public ResponseEntity<com.example.demo.domain.model.Order> getById(@Parameter(description = "Sipariş kimliği") @PathVariable Long id) {
         try {
-            return ResponseEntity.ok(orderUseCase.getUserOrder(0L, id));
+            return ResponseEntity.ok(orderUseCase.getByIdAdmin(id));
         } catch (java.util.NoSuchElementException ex) {
             return ResponseEntity.notFound().build();
         }
