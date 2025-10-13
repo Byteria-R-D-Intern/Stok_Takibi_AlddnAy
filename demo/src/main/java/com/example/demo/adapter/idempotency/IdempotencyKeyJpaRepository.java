@@ -1,4 +1,4 @@
-package com.example.demo.adapter.persistence.idempotency;
+package com.example.demo.adapter.idempotency;
 
 
 import java.time.Instant;

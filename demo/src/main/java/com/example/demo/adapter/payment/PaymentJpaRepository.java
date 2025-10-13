@@ -1,4 +1,4 @@
-package com.example.demo.adapter.persistence.payment;
+package com.example.demo.adapter.payment;
 
 
 import java.time.Instant;

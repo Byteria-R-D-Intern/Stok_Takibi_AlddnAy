@@ -1,4 +1,4 @@
-package com.example.demo.adapter.persistence.product;
+package com.example.demo.adapter.product;
 
 import java.util.List;
 import java.util.Optional;

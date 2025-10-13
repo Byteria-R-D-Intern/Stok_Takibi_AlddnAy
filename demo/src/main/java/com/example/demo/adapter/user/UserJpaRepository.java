@@ -1,4 +1,4 @@
-package com.example.demo.adapter.persistence.user;
+package com.example.demo.adapter.user;
 
 import java.util.Optional;
 
