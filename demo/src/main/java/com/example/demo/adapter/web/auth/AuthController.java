@@ -68,7 +68,7 @@ public class AuthController {
 					.orElseGet(() -> ResponseEntity.badRequest().build());
 	}
 
-	// DTOs
+	// DTOlar
     public static class LoginRequest {
         @Schema(description = "Email")
         @Email @NotBlank public String email;
@@ -86,7 +86,7 @@ public class AuthController {
         @Schema(description = "Şifre")
         @NotBlank public String password;
         @Schema(description = "Rol (opsiyonel)")
-        public String role; // optional, default CUSTOMER
+        public String role; // default CUSTOMER
     }
 
 	public static class TokenResponse {

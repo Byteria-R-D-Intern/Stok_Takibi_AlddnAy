@@ -24,14 +24,19 @@ public class TokenizationController {
 
     public TokenizationController(TokenizationService svc) { this.svc = svc; }
 
+    // İstek/yanıt DTO'ları: PAN sadece internal uçta işlenir; dış API'ye asla açılmaz.
     public static record TokenizeRequest(@NotBlank String pan, @NotNull Integer expMonth, @NotNull Integer expYear) {}
+
     public static record TokenizeResponse(String token, String last4, String brand, Integer expMonth, Integer expYear) {}
+
     public static record DetokenizeRequest(@NotBlank String token) {}
+
     public static record DetokenizeResponse(String pan, Integer expMonth, Integer expYear) {}
+    
     public static record RevokeRequest(@NotBlank String token) {}
 
     @PostMapping("/tokenize")
-    @Operation(summary = "PAN'ı tokenize et")
+    @Operation(summary = "PAN'ı tokenize et", description = "Geçerli PAN/SKT alır, şifreli olarak in-memory saklar ve token döner. Üretimde bu uç sadece güvenilir backend tarafından kullanılmalıdır.")
     public ResponseEntity<TokenizeResponse> tokenize(@RequestBody TokenizeRequest req) {
         String token = svc.tokenize(req.pan(), req.expMonth(), req.expYear());
         String last4 = req.pan().substring(Math.max(0, req.pan().length() - 4));
@@ -40,18 +45,19 @@ public class TokenizationController {
     }
 
     @PostMapping("/detokenize")
-    @Operation(summary = "Token'dan PAN'ı çöz")
+    @Operation(summary = "Token'dan PAN'ı çöz", description = "Token geçerliyse PAN/SKT döner. Süresi dolmuş token için 'token_expired' hatası fırlatılır.")
     public ResponseEntity<DetokenizeResponse> detokenize(@RequestBody DetokenizeRequest req) {
         var res = svc.detokenize(req.token());
         return ResponseEntity.ok(new DetokenizeResponse(res.pan(), res.expMonth(), res.expYear()));
     }
 
     @DeleteMapping("/tokens")
-    @Operation(summary = "Token'ı iptal et")
+    @Operation(summary = "Token'ı iptal et", description = "Tek kullanımlık kullanım veya manuel iptal için token'ı geçersiz kılar.")
     public ResponseEntity<Void> revoke(@RequestBody RevokeRequest req) {
         svc.revoke(req.token());
         return ResponseEntity.noContent().build();
     }
+
 
     private static String detectBrand(String pan) {
         if (pan.startsWith("4")) return "VISA";

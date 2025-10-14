@@ -33,6 +33,14 @@ public class OpenApiConfig {
 			.pathsToMatch("/api/**", "/api/payments/**")
 			.build();
 	}
+
+	@Bean
+	public GroupedOpenApi internalApi() {
+		return GroupedOpenApi.builder()
+			.group("internal")
+			.pathsToMatch("/internal/**")
+			.build();
+	}
 }
 
 

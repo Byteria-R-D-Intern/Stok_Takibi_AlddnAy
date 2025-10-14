@@ -76,14 +76,6 @@ public class OrderController {
         return ResponseEntity.noContent().build();
     }
 
-    public static class UpdateAddressRequest {
-        @Schema(description = "Alıcı adı")
-        @NotBlank public String shippingName;
-        @Schema(description = "Alıcı telefon")
-        public String shippingPhone;
-        @Schema(description = "Teslimat adresi")
-        @NotBlank public String shippingAddress;
-    }
 
     @PostMapping("/checkout")
     @Operation(summary = "Checkout", description = "Sepetteki ürünlerle sipariş oluşturur")
@@ -100,8 +92,9 @@ public class OrderController {
         CheckoutResult result = orderUseCase.directCheckout(cmd);
 
         auditLogUseCase.log(actorId, "order", result.orderId, "checkout", "order created via checkout", null);
-        
-        return ResponseEntity.ok(new CheckoutResponse(result.orderId, result.total));
+        // Ödeme idempotency anahtarı pay:{orderId}:{UUID} şeklinde oluşturuluyor
+        String paymentIdempotencyKey = "pay:" + result.orderId + ":" + java.util.UUID.randomUUID().toString();
+        return ResponseEntity.ok(new CheckoutResponse(result.orderId, result.total, paymentIdempotencyKey));
     }
 
     public static class CheckoutRequest {
@@ -130,13 +123,25 @@ public class OrderController {
         public Integer quantity;
     }
 
+    public static class UpdateAddressRequest {
+        @Schema(description = "Alıcı adı")
+        @NotBlank public String shippingName;
+        @Schema(description = "Alıcı telefon")
+        public String shippingPhone;
+        @Schema(description = "Teslimat adresi")
+        @NotBlank public String shippingAddress;
+    }
+
     public static class CheckoutResponse {
         public final Long orderId;
         public final java.math.BigDecimal total;
+        @Schema(description = "Ödeme çağrısında Idempotency-Key header'ında kullanmanız için önerilen anahtar")
+        public final String paymentIdempotencyKey;
 
-        public CheckoutResponse(Long orderId, java.math.BigDecimal total) {
+        public CheckoutResponse(Long orderId, java.math.BigDecimal total, String paymentIdempotencyKey) {
             this.orderId = orderId;
             this.total = total;
+            this.paymentIdempotencyKey = paymentIdempotencyKey;
         }
     }
 }

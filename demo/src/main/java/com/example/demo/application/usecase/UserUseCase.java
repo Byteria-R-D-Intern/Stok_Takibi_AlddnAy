@@ -93,7 +93,7 @@ public class UserUseCase {
 		return Optional.of(token);
 	}
 
-	// Basit yardımcılar
+	
 	private static boolean isBlank(String s) { return s == null || s.isBlank(); }
 	private static final Pattern EMAIL = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
 	private static boolean isValidEmail(String email) { return email != null && EMAIL.matcher(email).matches(); }

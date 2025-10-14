@@ -14,22 +14,33 @@ import com.example.demo.domain.port.ProductRepository;
 public class ProductUseCase {
 
 	private final ProductRepository productRepository;
+    private final AuditLogUseCase auditLogUseCase;
 
-	public ProductUseCase(ProductRepository productRepository) {
-		this.productRepository = productRepository;
+    public ProductUseCase(ProductRepository productRepository, AuditLogUseCase auditLogUseCase) {
+        this.productRepository = productRepository;
+        this.auditLogUseCase = auditLogUseCase;
 	}
 
 	public Long create(String name, BigDecimal price, Integer stock) {
+
 		if (name == null || name.isBlank()) throw new IllegalArgumentException("name required");
+
 		if (price == null || price.signum() <= 0) throw new IllegalArgumentException("price must be > 0");
+		
 		if (stock == null || stock < 0) throw new IllegalArgumentException("stock must be >= 0");
+
 		if (productRepository.existsByName(name)) throw new IllegalStateException("product name already exists");
+
 		Product p = new Product();
 		p.setName(name);
 		p.setPrice(price);
 		p.setStock(stock);
 		p.setCreatedAt(Instant.now());
-		return productRepository.save(p).getId();
+        Long id = productRepository.save(p).getId();
+        
+
+        auditLogUseCase.log(null, "product", id, "create", "product created (service)", null);
+        return id;
 	}
 
 	public Optional<Product> getById(Long id) {
@@ -56,11 +67,15 @@ public class ProductUseCase {
 			if (stock < 0) throw new IllegalArgumentException("stock must be >= 0");
 			existing.setStock(stock);
 		}
-		productRepository.save(existing);
+        productRepository.save(existing);
+       
+        auditLogUseCase.log(null, "product", id, "update", "product updated ", null);
 	}
 
 	public void delete(Long id) {
-		productRepository.deleteById(id);
+        productRepository.deleteById(id);
+       
+        auditLogUseCase.log(null, "product", id, "delete", "product deleted ", null);
 	}
 }
 

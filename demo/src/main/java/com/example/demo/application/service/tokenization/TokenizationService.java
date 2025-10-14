@@ -32,6 +32,7 @@ public class TokenizationService {
             @Value("${token.ttl-seconds:600}") long ttlSeconds,
             @Value("${token.secret:}") String base64Key
     ) {
+        
         this.ttl = Duration.ofSeconds(ttlSeconds);
         byte[] keyBytes = null;
         if (base64Key != null && !base64Key.isBlank()) {
@@ -45,11 +46,11 @@ public class TokenizationService {
                 }
             }
             if (keyBytes != null && keyBytes.length != 16 && keyBytes.length != 24 && keyBytes.length != 32) {
-                keyBytes = null; // invalid size, will fallback
+                keyBytes = null; // invalid size, fallback'a düş
             }
         }
         if (keyBytes == null) {
-            // Fallback: generate random 32-byte AES key so app can start (demo only)
+
             byte[] generated = new byte[32];
             random.nextBytes(generated);
             keyBytes = generated;
@@ -57,6 +58,7 @@ public class TokenizationService {
         this.secretKey = new SecretKeySpec(keyBytes, "AES");
     }
 
+    // Luhn algoritması
     public static boolean isValidLuhn(String pan) {
         int sum = 0; boolean alt = false;
         for (int i = pan.length() - 1; i >= 0; i--) {
@@ -78,12 +80,16 @@ public class TokenizationService {
         return token;
     }
 
+ 
     public DetokenizeResult detokenize(String token) {
         EncryptedCard enc = store.get(token);
         if (enc == null) throw new IllegalArgumentException("token_not_found");
-        if (enc.expiresAt.isBefore(Instant.now())) { store.remove(token); throw new IllegalStateException("token_expired"); }
+        if (enc.expiresAt.isBefore(Instant.now())) { 
+            store.remove(token); throw new IllegalStateException("token_expired"); 
+        }
         return decrypt(enc);
     }
+
 
     public void revoke(String token) { store.remove(token); }
 
@@ -93,11 +99,13 @@ public class TokenizationService {
         store.entrySet().removeIf(e -> e.getValue().expiresAt().isBefore(now));
     }
 
+
     private String generateToken() {
         byte[] bytes = new byte[24];
         random.nextBytes(bytes);
         return "tok_" + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
+
 
     private EncryptedCard encrypt(String pan, int expMonth, int expYear) {
         try {
@@ -112,6 +120,7 @@ public class TokenizationService {
     }
 
     public record DetokenizeResult(String pan, int expMonth, int expYear) {}
+
 
     private DetokenizeResult decrypt(EncryptedCard enc) {
         try {

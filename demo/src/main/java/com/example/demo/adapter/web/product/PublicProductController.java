@@ -38,7 +38,7 @@ public class PublicProductController {
             @Parameter(description = "Sıralama (örn: createdAt,desc)") @RequestParam(value = "sort", required = false, defaultValue = "createdAt,desc")
             String sort
     ) {
-        // Not: UseCase katmanında Page desteği yok; şimdilik in-memory slice yerine tüm listeyi dönüyoruz.
+
         if (q == null || q.isBlank()) return ResponseEntity.ok(productUseCase.listAll());
         return ResponseEntity.ok(productUseCase.searchByName(q));
     }

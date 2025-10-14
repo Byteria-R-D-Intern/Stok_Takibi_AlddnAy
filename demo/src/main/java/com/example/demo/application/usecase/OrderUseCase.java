@@ -16,6 +16,7 @@ import com.example.demo.domain.model.Product;
 import com.example.demo.domain.port.OrderItemRepository;
 import com.example.demo.domain.port.OrderRepository;
 import com.example.demo.domain.port.ProductRepository;
+import com.example.demo.application.service.NotificationService;
 
 import lombok.AllArgsConstructor;
 
@@ -26,6 +27,8 @@ public class OrderUseCase {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
+    private final NotificationService notificationService;
+    private final AuditLogUseCase auditLogUseCase;
 
 
     @Transactional
@@ -58,11 +61,16 @@ public class OrderUseCase {
         order.setShipping_phone(cmd.shippingPhone);
         order.setShipping_address(cmd.shippingAddress);
         order.setTotal(total);
-        // Order starts as not paid; payment flow will mark PAID when successful
+        //Ödeme yapıldıktan sonra PAID durumuna geçecek 
         order.setStatus(OrderStatus.DRAFT);
         order.setCreatedAt(Instant.now());
 
         order = orderRepository.save(order);
+        // Bildirim: Sipariş oluşturuldu
+        notificationService.create(cmd.userId, "ORDER_CREATED", "Sipariş oluşturuldu", "Sipariş #" + order.getId() + " oluşturuldu.", null);
+
+
+        auditLogUseCase.log(cmd.userId, "order", order.getId(), "create", "order created ", null);
 
         for (Map.Entry<Long,Integer> entry : productIdToQty.entrySet()) {
             Long productId = entry.getKey();
@@ -87,37 +95,55 @@ public class OrderUseCase {
         return new CheckoutResult(order.getId(), total);
     }
 
-    // Kullanıcının kendi siparişleri (basit filtreler üst katta)
+
     public List<Order> listUserOrders(Long userId) {
         return orderRepository.findByUserId(userId);
     }
 
     public Order getUserOrder(Long userId, Long orderId) {
+
         Order o = orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
+
         if (!o.getUser().getId().equals(userId)) throw new IllegalArgumentException("forbidden");
         return o;
     }
 
     public void cancelUserOrder(Long userId, Long orderId) {
+
         Order o = orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
+
         if (!o.getUser().getId().equals(userId)) throw new IllegalArgumentException("forbidden");
         if (o.getStatus() == OrderStatus.SHIPPED || o.getStatus() == OrderStatus.DELIVERED)
+
             throw new IllegalStateException("cannot cancel after shipment");
+
         o.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(o);
+        
+        //log
+        auditLogUseCase.log(userId, "order", orderId, "cancel", "order cancelled (service)", null);
+        // notification
+        notificationService.create(userId, "ORDER_CANCELLED", "Sipariş iptal edildi", "Sipariş #" + orderId + " iptal edildi.", null);
     }
 
-    // Kullanıcı: kargo bilgilerini güncelle (kargoya verilmeden önce)
+
     public void updateShippingInfo(Long userId, Long orderId, String name, String phone, String address) {
+
         Order o = orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
+
         if (!o.getUser().getId().equals(userId)) throw new IllegalArgumentException("forbidden");
+
         if (o.getStatus() == OrderStatus.SHIPPED || o.getStatus() == OrderStatus.DELIVERED)
             throw new IllegalStateException("cannot update after shipment");
+
         if (isBlank(name) || isBlank(address)) throw new IllegalArgumentException("shippingName and shippingAddress are required");
+
         o.setShipping_name(name);
         o.setShipping_phone(phone);
         o.setShipping_address(address);
         orderRepository.save(o);
+ 
+        auditLogUseCase.log(userId, "order", orderId, "update_shipping", "shipping info updated (service)", null);
     }
 
 
@@ -164,6 +190,13 @@ public class OrderUseCase {
         Order o = orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
         o.setStatus(newStatus);
         orderRepository.save(o);
+        // Service-level audit: status updated (admin/system)
+        auditLogUseCase.log(null, "order", orderId, "update_status", "order status=" + newStatus, null);
+        // notification to owner
+        Long ownerId = (o.getUser() != null ? o.getUser().getId() : null);
+        if (ownerId != null) {
+            notificationService.create(ownerId, "STATUS_CHANGED", "Sipariş durumu güncellendi", "Sipariş #" + orderId + " durumu: " + newStatus, null);
+        }
     }
 
     // Admin: fetch by id without user checks
