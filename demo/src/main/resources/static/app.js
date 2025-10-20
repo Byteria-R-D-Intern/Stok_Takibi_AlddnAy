@@ -1,60 +1,91 @@
-async function api(url, options = {}) {
-  const jwt = localStorage.getItem('jwt');
-  const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
-  if (jwt) headers['Authorization'] = jwt;
-  const res = await fetch(url, Object.assign({}, options, { headers }));
-  const text = await res.text();
-  let body;
-  try { body = JSON.parse(text); } catch { body = text; }
-  if (!res.ok) throw { status: res.status, body };
-  return body;
+// -----------------------------------------------------------------------------
+// Minimal fetch wrapper with JWT support
+// -----------------------------------------------------------------------------
+function getJwt() { return localStorage.getItem('jwt'); }
+function setJwt(token) { localStorage.setItem('jwt', token); }
+function clearJwt() { localStorage.removeItem('jwt'); }
+
+async function jsonFetch(url, { method = 'GET', headers = {}, body } = {}) {
+  const finalHeaders = { 'Content-Type': 'application/json', ...headers };
+  const jwt = getJwt();
+  if (jwt) finalHeaders['Authorization'] = jwt;
+
+  const response = await fetch(url, { method, headers: finalHeaders, body });
+  const text = await response.text();
+  let parsed; try { parsed = JSON.parse(text); } catch { parsed = text; }
+  if (!response.ok) {
+    throw { status: response.status, body: parsed };
+  }
+  return parsed;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('loginForm');
-  const statusEl = document.getElementById('status');
-  const out = document.getElementById('output');
-  const btnProducts = document.getElementById('testProducts');
-  const btnOrders = document.getElementById('testMyOrders');
-  const btnLogout = document.getElementById('logoutBtn');
+// -----------------------------------------------------------------------------
+// UI helpers
+// -----------------------------------------------------------------------------
+function $(id) { return document.getElementById(id); }
+function renderStatus(message) { $('status').textContent = message; }
+function renderOutput(data) {
+  const pretty = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+  $('output').textContent = pretty;
+}
 
+// -----------------------------------------------------------------------------
+// App bootstrap
+// -----------------------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+  const form = $('loginForm');
+  const btnProducts = $('testProducts');
+  const btnOrders = $('testMyOrders');
+  const btnLogout = $('logoutBtn');
+
+  // Initialize status
+  renderStatus(getJwt() ? 'Durum: Oturum açık' : 'Durum: Oturum kapalı');
+
+  // Login submit
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
+    const email = $('email').value.trim();
+    const password = $('password').value;
     try {
-      const resp = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
-      localStorage.setItem('jwt', 'Bearer ' + resp.token);
-      statusEl.textContent = 'Durum: Oturum açık';
-      out.textContent = 'Giriş başarılı';
+      const resp = await jsonFetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+      });
+      setJwt('Bearer ' + resp.token);
+      renderStatus('Durum: Oturum açık');
+      renderOutput('Giriş başarılı');
     } catch (err) {
-      out.textContent = 'Giriş başarısız: ' + JSON.stringify(err);
+      renderOutput('Giriş başarısız: ' + JSON.stringify(err, null, 2));
     }
   });
 
+  // Logout
   btnLogout.addEventListener('click', () => {
-    localStorage.removeItem('jwt');
-    statusEl.textContent = 'Durum: Oturum kapalı';
-    out.textContent = 'Çıkış yapıldı';
+    clearJwt();
+    renderStatus('Durum: Oturum kapalı');
+    renderOutput('Çıkış yapıldı');
   });
 
+  // Public products test
   btnProducts.addEventListener('click', async () => {
     try {
-      const resp = await api('/api/products');
-      out.textContent = JSON.stringify(resp, null, 2);
+      const resp = await jsonFetch('/api/products');
+      renderOutput(resp);
     } catch (err) {
-      out.textContent = 'Hata: ' + JSON.stringify(err, null, 2);
+      renderOutput('Hata: ' + JSON.stringify(err, null, 2));
     }
   });
 
+  // Auth-required orders test
   btnOrders.addEventListener('click', async () => {
     try {
-      const resp = await api('/api/orders');
-      out.textContent = JSON.stringify(resp, null, 2);
+      const resp = await jsonFetch('/api/orders');
+      renderOutput(resp);
     } catch (err) {
-      out.textContent = 'Hata: ' + JSON.stringify(err, null, 2);
+      renderOutput('Hata: ' + JSON.stringify(err, null, 2));
     }
   });
 });
+
 
 

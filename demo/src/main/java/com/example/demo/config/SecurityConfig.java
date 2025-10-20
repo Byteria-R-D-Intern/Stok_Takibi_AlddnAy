@@ -22,7 +22,9 @@ public class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
-					.requestMatchers("/api/products/**").permitAll()
+						.requestMatchers("/api/products/**").permitAll()
+						// Static login page and assets
+						.requestMatchers("/", "/index.html", "/login.html", "/app.js", "/favicon.ico", "/css/**", "/js/**", "/images/**").permitAll()
                     .requestMatchers("/h2-console/**").denyAll()
                     .requestMatchers("/internal/**").hasRole("ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
