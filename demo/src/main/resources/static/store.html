@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mağaza</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root { --border:#e5e7eb; --muted:#6b7280; --primary:#0d6efd; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+    h1 { margin: 0 0 12px; }
+    .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+    .panel { border:1px solid var(--border); border-radius:10px; padding:14px; }
+    .row { display:flex; align-items:center; gap:8px; }
+    .muted { color: var(--muted); font-size: 12px; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { text-align:left; padding:8px; border-bottom:1px solid var(--border); }
+    input, select { padding:8px; border:1px solid var(--border); border-radius:8px; }
+    button { padding:8px 12px; border:0; border-radius:8px; background: var(--primary); color:#fff; cursor:pointer; }
+    .link { color: var(--primary); text-decoration: none; }
+    .mt { margin-top: 10px; }
+    pre { background:#f9fafb; padding:12px; border:1px solid var(--border); border-radius:8px; overflow:auto; }
+  </style>
+  <script defer src="store.js"></script>
+</head>
+<body>
+  <div class="row" style="justify-content: space-between;">
+    <h1>Mağaza</h1>
+    <div class="row">
+      <a class="link" href="/login.html">Giriş</a>
+      <button id="logoutBtn" class="mt">Çıkış</button>
+    </div>
+  </div>
+  <p id="status" class="muted">Durum: Oturum kapalı</p>
+
+  <div class="grid">
+    <div class="panel">
+      <h3>Ürünler</h3>
+      <table>
+        <thead><tr><th>Ad</th><th>Fiyat</th><th>Stok</th><th>Adet</th><th></th></tr></thead>
+        <tbody id="products"></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h3>Sepet</h3>
+      <div id="cartEmpty" class="muted">Sepet boş</div>
+      <table id="cartTable" style="display:none;">
+        <thead><tr><th>Ürün</th><th>Adet</th><th>Birim</th><th>Toplam</th><th></th></tr></thead>
+        <tbody id="cart"></tbody>
+        <tfoot><tr><td colspan="3" style="text-align:right;">Genel Toplam</td><td id="grandTotal">0</td><td></td></tr></tfoot>
+      </table>
+
+      <h4 class="mt">Teslimat Bilgisi</h4>
+      <div class="mt">
+        <input id="shipName" placeholder="Ad Soyad" />
+        <input id="shipPhone" placeholder="Telefon" />
+        <input id="shipAddr" placeholder="Adres" style="width:100%; margin-top:6px;" />
+      </div>
+      <div class="row mt">
+        <button id="checkoutBtn">Checkout</button>
+        <button id="payBtn" disabled>Öde</button>
+      </div>
+      <div class="mt muted" id="orderInfo"></div>
+    </div>
+  </div>
+
+  <h3 class="mt">Sonuç</h3>
+  <pre id="output">...</pre>
+</body>
+</html>
+
+

@@ -38,8 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnOrders = $('testMyOrders');
   const btnLogout = $('logoutBtn');
 
-  // Initialize status
-  renderStatus(getJwt() ? 'Durum: Oturum açık' : 'Durum: Oturum kapalı');
+  // If already logged in, go to store
+  if (getJwt()) {
+    window.location.href = '/store.html';
+    return;
+  }
+
+  // Initialize status for login page
+  renderStatus('Durum: Oturum kapalı');
 
   // Login submit
   form.addEventListener('submit', async (e) => {
@@ -52,8 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ email, password })
       });
       setJwt('Bearer ' + resp.token);
-      renderStatus('Durum: Oturum açık');
-      renderOutput('Giriş başarılı');
+      // Redirect to store after successful login
+      window.location.href = '/store.html';
     } catch (err) {
       renderOutput('Giriş başarısız: ' + JSON.stringify(err, null, 2));
     }
