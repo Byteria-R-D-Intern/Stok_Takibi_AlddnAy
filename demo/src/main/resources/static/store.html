@@ -61,6 +61,25 @@
         <button id="payBtn" disabled>Öde</button>
       </div>
       <div class="mt muted" id="orderInfo"></div>
+
+      <hr class="mt" />
+      <h4>Tokenizasyon (Admin ile)</h4>
+      <div class="muted">PAN asla sunucuya açık gönderilmez; bu demo için admin token ile /internal/tokenize çağrılır.</div>
+      <div class="mt">
+        <input id="pan" placeholder="Kart Numarası (örn. 4111111111111111)" style="width:100%;" />
+      </div>
+      <div class="row mt">
+        <input id="expMonth" placeholder="Ay (MM)" style="width:120px;" />
+        <input id="expYear" placeholder="Yıl (YYYY)" style="width:140px;" />
+      </div>
+      <div class="mt">
+        <input id="adminJwt" placeholder="Admin JWT (Bearer ...)
+" style="width:100%;" />
+      </div>
+      <div class="row mt">
+        <button id="tokenizeBtn">Tokenize (Admin)</button>
+        <span id="tokenInfo" class="muted"></span>
+      </div>
     </div>
   </div>
 

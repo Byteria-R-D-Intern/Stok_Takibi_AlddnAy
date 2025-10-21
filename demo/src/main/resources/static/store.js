@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const amount = Number(e.target.dataset.amount);
     const idempotency = e.target.dataset.idem || uuid();
     try {
-
+      const paymentToken = e.target.dataset.token || '';
       const resp = await jsonFetch('/api/payments', {
         method: 'POST',
         headers: { 'Idempotency-Key': idempotency },
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
           amount,
           currency: 'TRY',
           method: 'CARD',
-          paymentToken: ''
+          paymentToken
         })
       });
       renderOutput(resp);
@@ -211,6 +211,30 @@ document.addEventListener('DOMContentLoaded', () => {
       renderOutput(err);
     }
   });
+
+  // Tokenization (admin) — /internal/tokenize çağırıp token'ı ödeme butonuna set eder
+  const tokenizeBtn = document.getElementById('tokenizeBtn');
+  if (tokenizeBtn) {
+    tokenizeBtn.addEventListener('click', async () => {
+      const pan = $('pan').value.trim();
+      const expMonth = Number($('expMonth').value.trim());
+      const expYear = Number($('expYear').value.trim());
+      const adminJwt = $('adminJwt').value.trim();
+      if (!pan || !expMonth || !expYear || !adminJwt) { renderOutput('PAN/exp/admin JWT gerekli'); return; }
+      try {
+        const resp = await jsonFetch('/internal/tokenize', {
+          method: 'POST',
+          headers: { Authorization: adminJwt },
+          body: JSON.stringify({ pan, expMonth, expYear })
+        });
+        $('tokenInfo').textContent = `Token: ${resp.token} (brand: ${resp.brand}, last4: ${resp.last4})`;
+        $('payBtn').dataset.token = resp.token;
+        renderOutput(resp);
+      } catch (err) {
+        renderOutput(err);
+      }
+    });
+  }
 });
 
 
