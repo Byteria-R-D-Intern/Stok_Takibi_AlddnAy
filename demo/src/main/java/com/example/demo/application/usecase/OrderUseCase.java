@@ -190,8 +190,9 @@ public class OrderUseCase {
         Order o = orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
         o.setStatus(newStatus);
         orderRepository.save(o);
-        // Service-level audit: status updated (admin/system)
-        auditLogUseCase.log(null, "order", orderId, "update_status", "order status=" + newStatus, null);
+        // Service-level audit: status updated (actor = order owner)
+        Long actorIdForAudit = (o.getUser() != null ? o.getUser().getId() : 0L);
+        auditLogUseCase.log(actorIdForAudit, "order", orderId, "update_status", "order status=" + newStatus, null);
         // notification to owner
         Long ownerId = (o.getUser() != null ? o.getUser().getId() : null);
         if (ownerId != null) {
