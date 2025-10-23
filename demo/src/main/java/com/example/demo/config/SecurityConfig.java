@@ -23,8 +23,8 @@ public class SecurityConfig {
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/products/**").permitAll()
-                        // Statik sayfalar: login ve store public; API çağrıları JWT ile korunur
-                        .requestMatchers("/login.html", "/app.js", "/favicon.ico", "/store.html", "/store.js").permitAll()
+                        // Statik sayfalar: login/store/admin public; API çağrıları JWT ile korunur
+                        .requestMatchers("/login.html", "/app.js", "/favicon.ico", "/store.html", "/store.js", "/admin.html", "/admin.js").permitAll()
                     .requestMatchers("/h2-console/**").denyAll()
                     .requestMatchers("/internal/**").hasRole("ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

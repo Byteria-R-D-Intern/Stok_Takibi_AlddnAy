@@ -40,8 +40,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // If already logged in, go to store
   if (getJwt()) {
-    window.location.href = '/store.html';
-    return;
+    // JWT içinden role'ü çöz ve uygun panele yönlendir
+    try {
+      const token = getJwt().replace(/^Bearer\s+/i, '');
+      const payload = JSON.parse(atob(token.split('.')[1] || ''));
+      const role = (payload.role || payload.authorities || '').toString();
+      const isAdmin = /ADMIN/i.test(role);
+      window.location.href = isAdmin ? '/admin.html' : '/store.html';
+      return;
+    } catch {
+      window.location.href = '/store.html';
+      return;
+    }
   }
 
   // Initialize status for login page
@@ -58,8 +68,15 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ email, password })
       });
       setJwt('Bearer ' + resp.token);
-      // Redirect to store after successful login
-      window.location.href = '/store.html';
+      // JWT role'e göre yönlendir
+      try {
+        const payload = JSON.parse(atob(resp.token.split('.')[1] || ''));
+        const role = (payload.role || payload.authorities || '').toString();
+        const isAdmin = /ADMIN/i.test(role);
+        window.location.href = isAdmin ? '/admin.html' : '/store.html';
+      } catch {
+        window.location.href = '/store.html';
+      }
     } catch (err) {
       renderOutput('Giriş başarısız: ' + JSON.stringify(err, null, 2));
     }

@@ -121,6 +121,26 @@ function uuid() {
   return (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
 }
 
+// -----------------------------------------------------------------------------
+// Tokenization helpers (frontend validation + debounce)
+// -----------------------------------------------------------------------------
+function luhn(pan) {
+  if (!/^[0-9]{12,19}$/.test(pan)) return false;
+  let sum = 0, alt = false;
+  for (let i = pan.length - 1; i >= 0; i--) {
+    let n = pan.charCodeAt(i) - 48; // '0' = 48
+    if (alt) { n *= 2; if (n > 9) n -= 9; }
+    sum += n; alt = !alt;
+  }
+  return (sum % 10) === 0;
+}
+
+function debounce(fn, delay) {
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+}
+
+let lastCardFingerprint = null; // pan|m|y
+
 document.addEventListener('DOMContentLoaded', () => {
   // Guard: JWT yoksa login sayfasına yönlendir
   if (!getJwt()) {
@@ -130,6 +150,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderStatus();
   loadProducts();
+
+  // Kullanıcı rolünü JWT'den çöz (payload.role varsa)
+  try {
+    const token = getJwt().replace(/^Bearer\s+/i, '');
+    const payload = JSON.parse(atob(token.split('.')[1] || ''));
+    const role = (payload.role || payload.authorities || '').toString();
+    const isAdmin = /ADMIN/i.test(role);
+    $('roleBadge').textContent = isAdmin ? 'Rol: ADMIN' : 'Rol: CUSTOMER';
+    // Admin panelini role göre göster/gizle
+    $('adminPanel').style.display = isAdmin ? '' : 'none';
+  } catch {}
 
   $('logoutBtn').addEventListener('click', () => {
     clearJwt();
@@ -235,6 +266,36 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Arka planda token üretimi (PAN/SKT değiştiğinde)
+  const maybeTokenize = debounce(async () => {
+    const pan = (document.getElementById('pan')?.value || '').replace(/\s+/g, '');
+    const m = Number(document.getElementById('expMonth')?.value || 0);
+    const y = Number(document.getElementById('expYear')?.value || 0);
+    const adminJwt = document.getElementById('adminJwt')?.value?.trim() || '';
+    const fp = `${pan}|${m}|${y}`;
+    if (!pan || !m || !y || !adminJwt) return;
+    if (!luhn(pan)) { document.getElementById('tokenInfo').textContent = 'Kart numarası geçersiz (Luhn)'; return; }
+    if (m < 1 || m > 12) { document.getElementById('tokenInfo').textContent = 'Ay 1-12 olmalı'; return; }
+    if (fp === lastCardFingerprint) return; // değişmemiş
+    try {
+      lastCardFingerprint = fp;
+      const resp = await jsonFetch('/internal/tokenize', {
+        method: 'POST',
+        headers: { Authorization: adminJwt },
+        body: JSON.stringify({ pan, expMonth: m, expYear: y })
+      });
+      document.getElementById('tokenInfo').textContent = `Hazır: ${resp.brand} •••• ${resp.last4}`;
+      document.getElementById('payBtn').dataset.token = resp.token;
+    } catch (err) {
+      document.getElementById('tokenInfo').textContent = 'Tokenizasyon başarısız';
+    }
+  }, 500);
+
+  ['pan', 'expMonth', 'expYear', 'adminJwt'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', maybeTokenize);
+  });
 });
 
 

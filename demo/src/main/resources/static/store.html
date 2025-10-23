@@ -27,6 +27,7 @@
   <div class="row" style="justify-content: space-between;">
     <h1>Mağaza</h1>
     <div class="row">
+      <span id="roleBadge" class="muted"></span>
       <a class="link" href="/login.html">Giriş</a>
       <button id="logoutBtn" class="mt">Çıkış</button>
     </div>
@@ -41,7 +42,7 @@
         <tbody id="products"></tbody>
       </table>
     </div>
-    <div class="panel">
+    <div class="panel" id="userPanel">
       <h3>Sepet</h3>
       <div id="cartEmpty" class="muted">Sepet boş</div>
       <table id="cartTable" style="display:none;">
@@ -62,8 +63,11 @@
       </div>
       <div class="mt muted" id="orderInfo"></div>
 
-      <hr class="mt" />
-      <h4>Tokenizasyon (Admin ile)</h4>
+    </div>
+    
+    <div class="panel" id="adminPanel" style="display:none;">
+      <h3>Admin Paneli</h3>
+      <h4 class="mt">Tokenizasyon</h4>
       <div class="muted">PAN asla sunucuya açık gönderilmez; bu demo için admin token ile /internal/tokenize çağrılır.</div>
       <div class="mt">
         <input id="pan" placeholder="Kart Numarası (örn. 4111111111111111)" style="width:100%;" />
@@ -73,8 +77,7 @@
         <input id="expYear" placeholder="Yıl (YYYY)" style="width:140px;" />
       </div>
       <div class="mt">
-        <input id="adminJwt" placeholder="Admin JWT (Bearer ...)
-" style="width:100%;" />
+        <input id="adminJwt" placeholder="Admin JWT (Bearer ...)" style="width:100%;" />
       </div>
       <div class="row mt">
         <button id="tokenizeBtn">Tokenize (Admin)</button>

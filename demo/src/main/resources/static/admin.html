@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Paneli</title>
+  <style>
+    :root { --border:#e5e7eb; --muted:#6b7280; --primary:#0d6efd; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+    .panel { border:1px solid var(--border); border-radius:10px; padding:14px; max-width: 720px; }
+    .row { display:flex; align-items:center; gap:8px; }
+    .muted { color: var(--muted); font-size: 12px; }
+    input { padding:8px; border:1px solid var(--border); border-radius:8px; }
+    button { padding:8px 12px; border:0; border-radius:8px; background: var(--primary); color:#fff; cursor:pointer; }
+    pre { background:#f9fafb; padding:12px; border:1px solid var(--border); border-radius:8px; overflow:auto; }
+  </style>
+  <script defer src="admin.js"></script>
+</head>
+<body>
+  <div class="row" style="justify-content: space-between;">
+    <h1>Admin Paneli</h1>
+    <div class="row">
+      <span id="roleBadge" class="muted"></span>
+      <a class="muted" href="/store.html">Mağaza</a>
+      <button id="logoutBtn">Çıkış</button>
+    </div>
+  </div>
+  <p id="status" class="muted">Durum: Oturum kapalı</p>
+
+  <div class="panel">
+    <h3>Tokenizasyon</h3>
+    <div class="muted">PAN asla sunucuya açık gönderilmez; bu demo için admin token ile /internal/tokenize çağrılır.</div>
+    <div class="row" style="margin-top:10px;">
+      <input id="pan" placeholder="Kart Numarası (örn. 4111111111111111)" style="flex:1;" />
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <input id="expMonth" placeholder="Ay (MM)" style="width:120px;" />
+      <input id="expYear" placeholder="Yıl (YYYY)" style="width:140px;" />
+    </div>
+    <div style="margin-top:10px;">
+      <input id="adminJwt" placeholder="Admin JWT (Bearer ...)" style="width:100%;" />
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <button id="tokenizeBtn">Tokenize (Admin)</button>
+      <span id="tokenInfo" class="muted"></span>
+    </div>
+    <pre id="output">...</pre>
+  </div>
+</body>
+</html>
+
+
