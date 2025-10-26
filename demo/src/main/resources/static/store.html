@@ -51,6 +51,17 @@
         <tfoot><tr><td colspan="3" style="text-align:right;">Genel Toplam</td><td id="grandTotal">0</td><td></td></tr></tfoot>
       </table>
 
+      <!-- Kart Bilgisi (Customer) -->
+      <h4 class="mt">Kart Bilgisi</h4>
+      <div class="mt">
+        <input id="cardPan" placeholder="Kart Numarası (örn. 4111111111111111)" style="width:100%;" />
+      </div>
+      <div class="row mt">
+        <input id="cardExpMonth" placeholder="Ay (MM)" style="width:120px;" />
+        <input id="cardExpYear" placeholder="Yıl (YYYY)" style="width:140px;" />
+      </div>
+      <div class="muted mt" id="cardTokenInfo"></div>
+
       <h4 class="mt">Teslimat Bilgisi</h4>
       <div class="mt">
         <input id="shipName" placeholder="Ad Soyad" />
@@ -63,27 +74,18 @@
       </div>
       <div class="mt muted" id="orderInfo"></div>
 
+      <h4 class="mt">Kart Bilgileri</h4>
+      <div class="mt">
+        <input id="cardPan" placeholder="Kart Numarası (örn. 4111111111111111)" style="width:100%;" />
+      </div>
+      <div class="row mt">
+        <input id="cardExpMonth" placeholder="Ay (MM)" style="width:120px;" />
+        <input id="cardExpYear" placeholder="Yıl (YYYY)" style="width:140px;" />
+        </div>
+        <div class="muted mt" id="cardTokenInfo"></div>
+
     </div>
     
-    <div class="panel" id="adminPanel" style="display:none;">
-      <h3>Admin Paneli</h3>
-      <h4 class="mt">Tokenizasyon</h4>
-      <div class="muted">PAN asla sunucuya açık gönderilmez; bu demo için admin token ile /internal/tokenize çağrılır.</div>
-      <div class="mt">
-        <input id="pan" placeholder="Kart Numarası (örn. 4111111111111111)" style="width:100%;" />
-      </div>
-      <div class="row mt">
-        <input id="expMonth" placeholder="Ay (MM)" style="width:120px;" />
-        <input id="expYear" placeholder="Yıl (YYYY)" style="width:140px;" />
-      </div>
-      <div class="mt">
-        <input id="adminJwt" placeholder="Admin JWT (Bearer ...)" style="width:100%;" />
-      </div>
-      <div class="row mt">
-        <button id="tokenizeBtn">Tokenize (Admin)</button>
-        <span id="tokenInfo" class="muted"></span>
-      </div>
-    </div>
   </div>
 
   <h3 class="mt">Sonuç</h3>

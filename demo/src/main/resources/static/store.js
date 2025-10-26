@@ -250,12 +250,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const pan = $('pan').value.trim();
       const expMonth = Number($('expMonth').value.trim());
       const expYear = Number($('expYear').value.trim());
-      const adminJwt = $('adminJwt').value.trim();
-      if (!pan || !expMonth || !expYear || !adminJwt) { renderOutput('PAN/exp/admin JWT gerekli'); return; }
+      if (!pan || !expMonth || !expYear) { renderOutput('PAN/exp gerekli'); return; }
       try {
-        const resp = await jsonFetch('/internal/tokenize', {
+        const resp = await jsonFetch('/api/tokenize', {
           method: 'POST',
-          headers: { Authorization: adminJwt },
           body: JSON.stringify({ pan, expMonth, expYear })
         });
         $('tokenInfo').textContent = `Token: ${resp.token} (brand: ${resp.brand}, last4: ${resp.last4})`;
@@ -269,30 +267,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Arka planda token üretimi (PAN/SKT değiştiğinde)
   const maybeTokenize = debounce(async () => {
-    const pan = (document.getElementById('pan')?.value || '').replace(/\s+/g, '');
-    const m = Number(document.getElementById('expMonth')?.value || 0);
-    const y = Number(document.getElementById('expYear')?.value || 0);
-    const adminJwt = document.getElementById('adminJwt')?.value?.trim() || '';
+    // Customer kart alanları
+    let pan = (document.getElementById('cardPan')?.value || '').replace(/\s+/g, '');
+    let m = Number(document.getElementById('cardExpMonth')?.value || 0);
+    let y = Number(document.getElementById('cardExpYear')?.value || 0);
+    let infoEl = document.getElementById('cardTokenInfo');
+
+    // Admin panelindeki alanlar (varsa) öncelik kazanır
+    const adminPanEl = document.getElementById('pan');
+    if (adminPanEl) {
+      const ap = (adminPanEl.value || '').replace(/\s+/g, '');
+      const am = Number(document.getElementById('expMonth')?.value || 0);
+      const ay = Number(document.getElementById('expYear')?.value || 0);
+      if (ap && am && ay) { pan = ap; m = am; y = ay; infoEl = document.getElementById('tokenInfo'); }
+    }
+
     const fp = `${pan}|${m}|${y}`;
-    if (!pan || !m || !y || !adminJwt) return;
-    if (!luhn(pan)) { document.getElementById('tokenInfo').textContent = 'Kart numarası geçersiz (Luhn)'; return; }
-    if (m < 1 || m > 12) { document.getElementById('tokenInfo').textContent = 'Ay 1-12 olmalı'; return; }
+    if (!pan || !m || !y) return;
+    if (!luhn(pan)) { if(infoEl) infoEl.textContent = 'Kart numarası geçersiz (Luhn)'; return; }
+    if (m < 1 || m > 12) { if(infoEl) infoEl.textContent = 'Ay 1-12 olmalı'; return; }
     if (fp === lastCardFingerprint) return; // değişmemiş
     try {
       lastCardFingerprint = fp;
-      const resp = await jsonFetch('/internal/tokenize', {
-        method: 'POST',
-        headers: { Authorization: adminJwt },
-        body: JSON.stringify({ pan, expMonth: m, expYear: y })
-      });
-      document.getElementById('tokenInfo').textContent = `Hazır: ${resp.brand} •••• ${resp.last4}`;
-      document.getElementById('payBtn').dataset.token = resp.token;
+      const resp = await jsonFetch('/api/tokenize', { method: 'POST', body: JSON.stringify({ pan, expMonth: m, expYear: y }) });
+      if (infoEl) infoEl.textContent = `Hazır: ${resp.brand} •••• ${resp.last4}`;
+      $('payBtn').dataset.token = resp.token;
     } catch (err) {
-      document.getElementById('tokenInfo').textContent = 'Tokenizasyon başarısız';
+      if (infoEl) infoEl.textContent = 'Tokenizasyon başarısız';
     }
   }, 500);
 
-  ['pan', 'expMonth', 'expYear', 'adminJwt'].forEach(id => {
+  ['cardPan', 'cardExpMonth', 'cardExpYear', 'pan', 'expMonth', 'expYear'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', maybeTokenize);
   });
