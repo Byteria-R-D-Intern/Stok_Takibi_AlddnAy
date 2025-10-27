@@ -28,23 +28,31 @@
   <p id="status" class="muted">Durum: Oturum kapalı</p>
 
   <div class="panel">
-    <h3>Tokenizasyon</h3>
-    <div class="muted">PAN asla sunucuya açık gönderilmez; bu demo için admin token ile /internal/tokenize çağrılır.</div>
+    <h3>Ürün Yönetimi</h3>
     <div class="row" style="margin-top:10px;">
-      <input id="pan" placeholder="Kart Numarası (örn. 4111111111111111)" style="flex:1;" />
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <input id="expMonth" placeholder="Ay (MM)" style="width:120px;" />
-      <input id="expYear" placeholder="Yıl (YYYY)" style="width:140px;" />
-    </div>
-    <div style="margin-top:10px;">
-      <input id="adminJwt" placeholder="Admin JWT (Bearer ...)" style="width:100%;" />
+      <input id="pName" placeholder="Ürün adı" style="flex:1;" />
+      <input id="pPrice" placeholder="Fiyat (örn. 99.90)" style="width:160px;" />
+      <input id="pStock" placeholder="Stok (örn. 100)" style="width:140px;" />
     </div>
     <div class="row" style="margin-top:10px;">
-      <button id="tokenizeBtn">Tokenize (Admin)</button>
-      <span id="tokenInfo" class="muted"></span>
+      <button id="createBtn">Ekle</button>
+      <button id="updateBtn" disabled>Güncelle</button>
+      <button id="clearBtn" class="secondary">Temizle</button>
+      <span id="formInfo" class="muted"></span>
     </div>
-    <pre id="output">...</pre>
+    <table class="mt" style="width:100%; border-collapse:collapse; margin-top:10px;">
+      <thead><tr><th>Id</th><th>Ad</th><th>Fiyat</th><th>Stok</th><th></th></tr></thead>
+      <tbody id="prodList"></tbody>
+    </table>
+
+    <hr class="mt" />
+
+    <h3 class="mt">Audit Log</h3>
+    <div class="row" style="margin-top:10px;">
+      <button id="loadLogsBtn">Son Logları Getir</button>
+      <span class="muted">Varsayılan: son 50 kayıt</span>
+    </div>
+    <pre id="logsOut" class="mt">...</pre>
   </div>
 </body>
 </html>
