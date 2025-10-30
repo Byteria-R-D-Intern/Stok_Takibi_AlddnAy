@@ -2,6 +2,13 @@ function $(id) {
   return document.getElementById(id);
 }
 
+function formatDate(iso) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString();
+  } catch { return iso; }
+}
+
 function getJwt() {
   return localStorage.getItem('jwt');
 }
@@ -158,8 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const role = (payload.role || payload.authorities || '').toString();
     const isAdmin = /ADMIN/i.test(role);
     $('roleBadge').textContent = isAdmin ? 'Rol: ADMIN' : 'Rol: CUSTOMER';
-    // Admin panelini role göre göster/gizle
-    $('adminPanel').style.display = isAdmin ? '' : 'none';
+    // Admin panelini role göre göster/gizle (eleman yoksa atla)
+    const ap = $('adminPanel');
+    if (ap) ap.style.display = isAdmin ? '' : 'none';
   } catch {}
 
   $('logoutBtn').addEventListener('click', () => {
@@ -301,6 +309,80 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', maybeTokenize);
   });
+
+  // ------------------------------ Bildirimler ------------------------------
+  async function loadNotifications(unreadOnly = true) {
+    try {
+      const list = await jsonFetch(`/api/notifications?unreadOnly=${unreadOnly}&limit=50`);
+      renderNotifications(list);
+      const unread = list.filter(n => !n.read).length;
+      const badge = $('notifCount');
+      if (badge) badge.textContent = `(${unread})`;
+    } catch (err) {
+      renderOutput({ notifications_error: err });
+    }
+  }
+
+  function renderNotifications(list) {
+    const tbody = $('notifList');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    list.forEach(n => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${n.title ?? '-'}</td>
+        <td>${n.message ?? ''}</td>
+        <td>${formatDate(n.createdAt)}</td>
+        <td>
+          ${n.read ? '' : `<button class="markRead" data-id="${n.id}">Oku</button>`}
+          <button class="del" data-id="${n.id}">Sil</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  const notifBtn = $('notifBtn');
+  if (notifBtn) {
+    notifBtn.addEventListener('click', async () => {
+      const panel = $('notifPanel');
+      if (!panel) return;
+      const showing = panel.style.display !== 'none';
+      panel.style.display = showing ? 'none' : '';
+      if (!showing) await loadNotifications(true);
+    });
+  }
+
+  const notifList = $('notifList');
+  if (notifList) {
+    notifList.addEventListener('click', async (e) => {
+      const btnRead = e.target.closest('button.markRead');
+      const btnDel = e.target.closest('button.del');
+      if (btnRead) {
+        const id = btnRead.getAttribute('data-id');
+        try {
+          await jsonFetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
+          await loadNotifications(true);
+        } catch {}
+      } else if (btnDel) {
+        const id = btnDel.getAttribute('data-id');
+        try {
+          await jsonFetch(`/api/notifications/${id}`, { method: 'DELETE' });
+          await loadNotifications(true);
+        } catch {}
+      }
+    });
+  }
+
+  // İlk yüklemede rozet için unread sayısı
+  loadNotifications(true);
+
+  // Periyodik olarak unread sayısını güncelle (30 sn)
+  setInterval(() => {
+    const panel = $('notifPanel');
+    const open = panel && panel.style.display !== 'none';
+    loadNotifications(!open); // açık değilse sadece unread listesi yeterli
+  }, 30000);
 });
 
 

@@ -52,7 +52,12 @@
       <button id="loadLogsBtn">Son Logları Getir</button>
       <span class="muted">Varsayılan: son 50 kayıt</span>
     </div>
-    <pre id="logsOut" class="mt">...</pre>
+    <table id="logsTable" class="mt" style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr><th>Id</th><th>Actor User Id</th><th>Target Type</th><th>Target Id</th><th>Action</th><th>Message</th><th>Changes Json</th><th>Created At</th></tr>
+          </thead>
+          <tbody id="logsList"></tbody>
+        </table>
   </div>
 </body>
 </html>

@@ -107,14 +107,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  loadLogsBtn.addEventListener('click', async ()=>{
-    try{
-      const logs = await jsonFetch('/api/admin/audit?limit=50');
-      logsOut.textContent = JSON.stringify(logs, null, 2);
-    }catch(err){
-      logsOut.textContent = 'Log yükleme hatası veya endpoint yok.\n' + JSON.stringify(err, null, 2);
+
+  // tarihi parse etmek için yardımcı bir fonk
+  function formatDate(iso){
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return String(iso ?? '');
+      return d.toLocaleString('tr-TR');
+    } catch {
+      return String(iso ?? '');
     }
-  });
+  }
+  //logları tabloya basar
+  function renderLogs(logs){
+
+     const tbody = document.getElementById('logsList');
+     logs.innerHTML = '';
+
+     logs.forEach(l => {
+
+      const tr = document.createElement('tr');
+      //daha okunuabilir olsun diye
+      const target =`${l.targetType}#${l.targetId}`;
+
+      tr.innerHTML = `
+      <td>${l.id}</td>
+      <td>${l.actorUserId}</td>
+      <td>${target}</td>
+      <td>${l.action}</td>
+      <td>${l.message}</td>
+      <td>
+        ${l.changesJson ? `<button class="show">Göster</button>
+          <pre class="detail" style="display:none; max-width:420px; white-space:pre-wrap; word-break:break-word;">${
+            typeof l.changesJson==='string' ? l.changesJson : JSON.stringify(l.changesJson, null, 2)
+          }</pre>` : '-'}
+      </td>
+      <td>${formatDate(l.createdAt)}</td>
+      `;
+
+      const btn = tr.querySelector('button.show');
+      if (btn) {
+        const pre = tr.querySelector('pre.detail');
+        btn.addEventListener('click', () => {
+          pre.style.display = pre.style.display === 'none' ? 'block' : 'none';
+        });
+      }
+  
+      // satırın tabloya eklenmesi
+      tbody.appendChild(tr);
+    })
+
+}
+
+  //logları yükleme butonu 
+  document.getElementById('loadLogsBtn').addEventListener('click', async ()=> {
+
+    try {
+      const logs = await jsonFetch('/api/admin/audit?limit=50');
+      renderLogs(logs);
+    } catch (err) {
+      alert('Log yüklenemedi');
+    }
+  })
 
   // İlk açılışta ürün listesi
   loadProducts();

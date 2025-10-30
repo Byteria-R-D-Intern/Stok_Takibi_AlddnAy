@@ -34,6 +34,18 @@
   </div>
   <p id="status" class="muted">Durum: Oturum kapalı</p>
 
+  <!-- Bildirimler: buton + panel -->
+  <div class="row" style="gap:8px; align-items:center;">
+    <button id="notifBtn">Bildirimler <span id="notifCount" class="muted">(0)</span></button>
+  </div>
+  <div id="notifPanel" class="panel" style="display:none; margin-top:10px;">
+    <h3>Bildirimler</h3>
+    <table>
+      <thead><tr><th>Başlık</th><th>Mesaj</th><th>Tarih</th><th></th></tr></thead>
+      <tbody id="notifList"></tbody>
+    </table>
+  </div>
+
   <div class="grid">
     <div class="panel">
       <h3>Ürünler</h3>
