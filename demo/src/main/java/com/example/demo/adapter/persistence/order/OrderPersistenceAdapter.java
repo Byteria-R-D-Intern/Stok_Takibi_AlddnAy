@@ -34,6 +34,8 @@ public class OrderPersistenceAdapter implements OrderRepository {
 	@Override
 	public List<Order> findByCreatedAtBetween(Instant from, Instant to) { return jpa.findByCreatedAtBetween(from, to); }
 
+    
+
 	// Paging destekli ek metotlar
 	public Page<Order> findPageByUserId(Long userId, Pageable pageable) {
 		return jpa.findByUser_Id(userId, pageable);

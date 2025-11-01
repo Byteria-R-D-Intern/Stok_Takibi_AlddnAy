@@ -20,6 +20,7 @@ public class AdminOrderController {
     public AdminOrderController(OrderUseCase orderUseCase) {
         this.orderUseCase = orderUseCase;
     }
+    
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
@@ -47,6 +48,14 @@ public class AdminOrderController {
             @Parameter(description = "Başlangıç zamanı (ISO)") @RequestParam("from") java.time.Instant from,
             @Parameter(description = "Bitiş zamanı (ISO)") @RequestParam("to") java.time.Instant to) {
         return ResponseEntity.ok(orderUseCase.stats(from, to));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    @Operation(summary = "Siparişleri listele", description = "Tüm siparişleri (limitli) döner")
+    public ResponseEntity<java.util.List<com.example.demo.domain.model.Order>> listAll(
+            @RequestParam(name = "limit", defaultValue = "100") int limit) {
+        return ResponseEntity.ok(orderUseCase.listAllOrders(limit));
     }
 
     public static class StatusRequest { public String status; }

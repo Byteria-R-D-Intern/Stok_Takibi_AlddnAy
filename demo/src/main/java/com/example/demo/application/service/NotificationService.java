@@ -17,6 +17,7 @@ public class NotificationService {
 
     public NotificationService(NotificationRepository repository) { this.repository = repository; }
 
+    @Transactional(readOnly = true)
     public List<Notification> list(Long userId, boolean unreadOnly, int limit) {
         return unreadOnly
             ? repository.findByUserIdAndIsReadOrderByCreatedAtDesc(userId, false, limit)

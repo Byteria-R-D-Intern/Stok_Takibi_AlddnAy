@@ -12,6 +12,8 @@ public interface OrderRepository {
 	List<Order> findByUserId(Long userId);
 	List<Order> findByStatus(OrderStatus status);
 	List<Order> findByCreatedAtBetween(Instant from, Instant to);
+	List<Order> findAll();
+    
 }
 
 

@@ -34,18 +34,31 @@
   </div>
   <p id="status" class="muted">Durum: Oturum kapalı</p>
 
-  <!-- Bildirimler: buton + panel -->
+
+  //Bİldiirmler
   <div class="row" style="gap:8px; align-items:center;">
     <button id="notifBtn">Bildirimler <span id="notifCount" class="muted">(0)</span></button>
   </div>
+  
+
   <div id="notifPanel" class="panel" style="display:none; margin-top:10px;">
     <h3>Bildirimler</h3>
     <table>
-      <thead><tr><th>Başlık</th><th>Mesaj</th><th>Tarih</th><th></th></tr></thead>
+      <thead>
+        <tr>
+          <th>Başlık</th>
+          <th>Mesaj</th>
+          <th>Tarih</th>
+          <th></th>
+        </tr>
+      </thead>
       <tbody id="notifList"></tbody>
     </table>
   </div>
 
+
+
+  
   <div class="grid">
     <div class="panel">
       <h3>Ürünler</h3>
@@ -62,17 +75,6 @@
         <tbody id="cart"></tbody>
         <tfoot><tr><td colspan="3" style="text-align:right;">Genel Toplam</td><td id="grandTotal">0</td><td></td></tr></tfoot>
       </table>
-
-      <!-- Kart Bilgisi (Customer) -->
-      <h4 class="mt">Kart Bilgisi</h4>
-      <div class="mt">
-        <input id="cardPan" placeholder="Kart Numarası (örn. 4111111111111111)" style="width:100%;" />
-      </div>
-      <div class="row mt">
-        <input id="cardExpMonth" placeholder="Ay (MM)" style="width:120px;" />
-        <input id="cardExpYear" placeholder="Yıl (YYYY)" style="width:140px;" />
-      </div>
-      <div class="muted mt" id="cardTokenInfo"></div>
 
       <h4 class="mt">Teslimat Bilgisi</h4>
       <div class="mt">

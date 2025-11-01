@@ -2,11 +2,15 @@ function $(id) {
   return document.getElementById(id);
 }
 
-function formatDate(iso) {
+function isValidBearer(raw) {
+  return /^Bearer\s+[^.]+\.[^.]+\.[^.]+$/.test(raw || '');
+}
+
+function decodeJwt(raw) {
   try {
-    const d = new Date(iso);
-    return d.toLocaleString();
-  } catch { return iso; }
+    const token = raw.replace(/^Bearer\s+/i, '');
+    return JSON.parse(atob(token.split('.')[1] || ''));
+  } catch { return null; }
 }
 
 function getJwt() {
@@ -40,6 +44,11 @@ async function jsonFetch(url, { method = 'GET', headers = {}, body } = {}) {
   }
 
   if (!res.ok) {
+    // NEDEN: Yetkisiz/engelli isteklerde kullanıcıyı login'e döndürmek
+    if (res.status === 401 || res.status === 403) {
+      clearJwt();
+      try { window.location.href = '/login.html'; } catch {}
+    }
     throw { status: res.status, body: parsed };
   }
 
@@ -148,12 +157,24 @@ function debounce(fn, delay) {
 
 let lastCardFingerprint = null; // pan|m|y
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Guard: JWT yoksa login sayfasına yönlendir
-  if (!getJwt()) {
-    window.location.href = '/login.html';
-    return;
+// Tarihi okunur biçimde göstermek için küçük yardımcı
+function formatDate(iso) {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso ?? '');
+    return d.toLocaleString('tr-TR');
+  } catch {
+    return String(iso ?? '');
   }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Guard: JWT yoksa veya geçersiz/expired ise login'e yönlendir
+  const raw = getJwt();
+  if (!isValidBearer(raw)) { clearJwt(); window.location.href = '/login.html'; return; }
+  const payload = decodeJwt(raw);
+  const now = Math.floor(Date.now() / 1000);
+  if (!payload || (payload.exp && payload.exp < now)) { clearJwt(); window.location.href = '/login.html'; return; }
 
   renderStatus();
   loadProducts();
@@ -172,8 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $('logoutBtn').addEventListener('click', () => {
     clearJwt();
-    renderStatus();
-    renderOutput('Çıkış yapıldı');
+    window.location.replace('/login.html');
   });
 
   $('products').addEventListener('click', (e) => {
@@ -310,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) el.addEventListener('input', maybeTokenize);
   });
 
-  // ------------------------------ Bildirimler ------------------------------
+  //Bildirimleri yükleme
   async function loadNotifications(unreadOnly = true) {
     try {
       const list = await jsonFetch(`/api/notifications?unreadOnly=${unreadOnly}&limit=50`);
@@ -319,10 +339,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const badge = $('notifCount');
       if (badge) badge.textContent = `(${unread})`;
     } catch (err) {
-      renderOutput({ notifications_error: err });
+      renderOutput(err);
     }
   }
-
+  
   function renderNotifications(list) {
     const tbody = $('notifList');
     if (!tbody) return;
@@ -341,7 +361,8 @@ document.addEventListener('DOMContentLoaded', () => {
       tbody.appendChild(tr);
     });
   }
-
+  
+  // Paneli aç/kapa ve açılınca verileri getir
   const notifBtn = $('notifBtn');
   if (notifBtn) {
     notifBtn.addEventListener('click', async () => {
@@ -352,12 +373,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!showing) await loadNotifications(true);
     });
   }
-
+  
+  // Satır içi 'Oku' ve 'Sil' aksiyonları
   const notifList = $('notifList');
   if (notifList) {
     notifList.addEventListener('click', async (e) => {
       const btnRead = e.target.closest('button.markRead');
       const btnDel = e.target.closest('button.del');
+  
       if (btnRead) {
         const id = btnRead.getAttribute('data-id');
         try {
@@ -373,16 +396,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-
-  // İlk yüklemede rozet için unread sayısı
+  
+  // İlk yükleme: sayaç için unread çek
   loadNotifications(true);
-
-  // Periyodik olarak unread sayısını güncelle (30 sn)
+  
+  // Periyodik: 30 sn'de bir sadece unread'leri güncelle
   setInterval(() => {
-    const panel = $('notifPanel');
-    const open = panel && panel.style.display !== 'none';
-    loadNotifications(!open); // açık değilse sadece unread listesi yeterli
+    loadNotifications(true);
   }, 30000);
+
+
 });
 
 

@@ -205,6 +205,12 @@ public class OrderUseCase {
         return orderRepository.findById(orderId).orElseThrow(java.util.NoSuchElementException::new);
     }
 
+    public List<Order> listAllOrders(int limit) {
+        List<Order> all = orderRepository.findAll();
+        int max = Math.max(1, Math.min(limit, 500));
+        return all.size() > max ? all.subList(0, max) : all;
+    }
+
 
     private Map<Long,Integer> mergeItems(CheckoutCommand cmd){
         Map<Long,Integer> merged = new HashMap<>();

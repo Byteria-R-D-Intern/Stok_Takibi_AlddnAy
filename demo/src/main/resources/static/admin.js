@@ -2,28 +2,35 @@ function $(id){ return document.getElementById(id); }
 function getJwt(){ return localStorage.getItem('jwt'); }
 function clearJwt(){ localStorage.removeItem('jwt'); }
 
+function isValidBearer(raw){ return /^Bearer\s+[^.]+\.[^.]+\.[^.]+$/.test(raw||''); }
+function decodeJwt(raw){ try{ const t=raw.replace(/^Bearer\s+/i,''); return JSON.parse(atob(t.split('.')[1]||'')); }catch{ return null; } }
+
 async function jsonFetch(url, { method='GET', headers={}, body }={}){
   const finalHeaders = { 'Content-Type': 'application/json', ...headers };
   const jwt = getJwt(); if (jwt) finalHeaders['Authorization'] = jwt;
   const res = await fetch(url, { method, headers: finalHeaders, body });
   const text = await res.text(); let parsed; try{ parsed = JSON.parse(text);}catch{ parsed=text }
-  if(!res.ok) throw { status: res.status, body: parsed };
+  if(!res.ok){
+    if(res.status===401 || res.status===403){ clearJwt(); try{ window.location.href='/login.html'; }catch{} }
+    throw { status: res.status, body: parsed };
+  }
   return parsed;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Guard: admin rolü yoksa store'a yönlendir
-  try{
-    const token = (getJwt()||'').replace(/^Bearer\s+/i, '');
-    const payload = JSON.parse(atob(token.split('.')[1]||''));
-    const role = (payload.role || payload.authorities || '').toString();
-    const isAdmin = /ADMIN/i.test(role);
-    $('roleBadge').textContent = isAdmin ? 'Rol: ADMIN' : 'Rol: CUSTOMER';
-    if(!isAdmin){ window.location.href = '/store.html'; return; }
-  }catch{ window.location.href = '/login.html'; return; }
+  // Guard: token yok/bozuk/expired ise login'e; admin değilse store'a
+  const raw = getJwt();
+  if(!isValidBearer(raw)){ clearJwt(); window.location.href='/login.html'; return; }
+  const payload = decodeJwt(raw);
+  const now = Math.floor(Date.now()/1000);
+  if(!payload || (payload.exp && payload.exp < now)){ clearJwt(); window.location.href='/login.html'; return; }
+  const role = (payload.role || payload.authorities || '').toString();
+  const isAdmin = /ADMIN/i.test(role);
+  $('roleBadge').textContent = isAdmin ? 'Rol: ADMIN' : 'Rol: CUSTOMER';
+  if(!isAdmin){ window.location.href = '/store.html'; return; }
 
   $('status').textContent = 'Durum: Oturum açık';
-  $('logoutBtn').addEventListener('click', ()=>{ clearJwt(); window.location.href = '/login.html'; });
+  $('logoutBtn').addEventListener('click', ()=>{ clearJwt(); window.location.replace('/login.html'); });
 
   // Admin Ürün Yönetimi
   const pName = $('pName'), pPrice = $('pPrice'), pStock = $('pStock');
