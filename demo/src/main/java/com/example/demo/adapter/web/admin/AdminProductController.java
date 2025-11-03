@@ -39,7 +39,11 @@ public class AdminProductController {
     @PostMapping
     @Operation(summary = "Ürün oluştur", description = "Yeni ürün ekler")
     public ResponseEntity<CreateProductResponse> create(Authentication auth, @RequestBody CreateProductRequest req) {
-        Long id = productUseCase.create(req.name, req.price, req.stock);
+       
+        Long id = productUseCase.create(
+            req.name, req.price, req.stock,
+            req.sku, req.description, req.metadata
+        );
         Long actorId = null;
         try { actorId = Long.valueOf(auth.getName()); } catch (Exception ignored) {}
         auditLogUseCase.log(actorId, "product", id, "create", "product created", null);
@@ -66,7 +70,12 @@ public class AdminProductController {
     @PutMapping("/{id}")
     @Operation(summary = "Ürün güncelle", description = "Ürün bilgilerini günceller")
     public ResponseEntity<Void> update(Authentication auth, @Parameter(description = "Ürün kimliği") @PathVariable Long id, @RequestBody UpdateProductRequest req) {
-        productUseCase.update(id, req.name, req.price, req.stock);
+       
+        productUseCase.update(
+            id,
+            req.name, req.price, req.stock,
+            req.sku, req.description, req.metadata
+        );
         Long actorId = null;
         try { actorId = Long.valueOf(auth.getName()); } catch (Exception ignored) {}
         auditLogUseCase.log(actorId, "product", id, "update", "product updated", null);
@@ -87,10 +96,18 @@ public class AdminProductController {
     public static class CreateProductRequest {
         @Schema(description = "Ürün adı")
         @NotBlank public String name;
+
         @Schema(description = "Stok")
         @NotNull @Min(0) public Integer stock;
+
         @Schema(description = "Fiyat")
         @NotNull public BigDecimal price;
+
+        @Schema(description = "SKU") public String sku;
+
+        @Schema(description = "Açıklama") public String description;
+
+        @Schema(description = "Metadata (JSON)") public String metadata;
     }
 
     public static class UpdateProductRequest {
@@ -100,6 +117,9 @@ public class AdminProductController {
         public Integer stock;
         @Schema(description = "Fiyat")
         public BigDecimal price;
+        public String sku;
+        public String description;
+        public String metadata;
     }
 
     public static class CreateProductResponse {

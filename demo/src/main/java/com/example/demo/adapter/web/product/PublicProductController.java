@@ -1,6 +1,7 @@
 package com.example.demo.adapter.web.product;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.application.usecase.ProductUseCase;
 import com.example.demo.domain.model.Product;
+import com.example.demo.adapter.web.product.dto.PublicProductDto;
 
 @RestController
 @RequestMapping("/api/products")
@@ -28,7 +30,7 @@ public class PublicProductController {
 
     @GetMapping
     @Operation(summary = "Ürünleri listele", description = "İsimde arama ile ürün listesini döner")
-    public ResponseEntity<List<Product>> list(
+    public ResponseEntity<List<PublicProductDto>> list(
             @Parameter(description = "İsimde arama ifadesi") @RequestParam(value = "query", required = false) 
             String q,
             @Parameter(description = "Sayfa numarası") @RequestParam(value = "page", required = false, defaultValue = "0") 
@@ -39,14 +41,18 @@ public class PublicProductController {
             String sort
     ) {
 
-        if (q == null || q.isBlank()) return ResponseEntity.ok(productUseCase.listAll());
-        return ResponseEntity.ok(productUseCase.searchByName(q));
+        List<Product> list = (q == null || q.isBlank()) ? productUseCase.listAll() : productUseCase.searchByName(q);
+        List<PublicProductDto> dtos = list.stream()
+            .map(p -> new PublicProductDto(p.getId(), p.getName(), p.getPrice(), p.getStock()))
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Ürün detayı", description = "ID ile ürün detayını döner")
-    public ResponseEntity<Product> getById(@Parameter(description = "Ürün kimliği") @PathVariable Long id) {
+    public ResponseEntity<PublicProductDto> getById(@Parameter(description = "Ürün kimliği") @PathVariable Long id) {
         return productUseCase.getById(id)
+            .map(p -> new PublicProductDto(p.getId(), p.getName(), p.getPrice(), p.getStock()))
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }

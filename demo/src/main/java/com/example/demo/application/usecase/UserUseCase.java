@@ -1,8 +1,10 @@
 package com.example.demo.application.usecase;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,9 @@ import com.example.demo.domain.model.User;
 import com.example.demo.domain.port.PasswordHasher;
 import com.example.demo.domain.port.TokenProvider;
 import com.example.demo.domain.port.UserRepository;
+
+import jakarta.transaction.Transactional;
+
 import com.example.demo.application.security.LoginRateLimiter;
 
 @Service
@@ -52,6 +57,12 @@ public class UserUseCase {
             return Optional.empty();
         }
     }
+
+	public Optional<User> getByEmail(String email) {
+		if (email == null) return java.util.Optional.empty();
+		String key = email.trim().toLowerCase(); // NEDEN: login akışındaki normalizasyon ile aynı olsun
+		return userRepository.findByEmail(key);
+	}
 
 	public Optional<String> register(String email,
 	                                String firstName,
@@ -93,6 +104,22 @@ public class UserUseCase {
 		return Optional.of(token);
 	}
 
+
+	public List<User> listAllUsers(Boolean active) {
+
+		List<User> all =userRepository.findAll();
+		if(active == null) return all;
+
+		return all.stream().filter(u -> u.isActive() == active.booleanValue()).collect(Collectors.toList());
+	}
+
+	//Kullanıcıyı aktif/pasif yapma 
+	@Transactional//şimdilik böyle kalsın sonra düzeltilecek
+	public void setActive(Long userId, boolean active) {
+		User u = userRepository.findById(userId).orElseThrow(java.util.NoSuchElementException::new);
+		u.setActive(active);
+		userRepository.save(u);
+	}
 	
 	private static boolean isBlank(String s) { return s == null || s.isBlank(); }
 	private static final Pattern EMAIL = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");

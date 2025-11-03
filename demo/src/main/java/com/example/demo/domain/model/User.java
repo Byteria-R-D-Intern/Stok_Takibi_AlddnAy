@@ -49,6 +49,9 @@ public class User {
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
 
+	@Column(name = "is_active", nullable = false)
+	private boolean isActive = true;
+
 
 }
 

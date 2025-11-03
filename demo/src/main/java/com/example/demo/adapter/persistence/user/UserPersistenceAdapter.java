@@ -1,5 +1,6 @@
 package com.example.demo.adapter.persistence.user;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -25,6 +26,17 @@ public class UserPersistenceAdapter implements UserRepository {
 
 	@Override
 	public boolean existsByEmail(String email) { return jpa.existsByEmail(email); }
+
+	@Override
+	public List<User> findAll() {
+		return jpa.findAll();
+	}
+
+	@Override
+	public boolean existsById(Long id) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'existsById'");
+	}
 }
 
 

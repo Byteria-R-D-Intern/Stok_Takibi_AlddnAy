@@ -13,6 +13,8 @@ public interface ProductJpaRepository extends JpaRepository<Product, Long> {
 	List<Product> findByNameContainingIgnoreCase(String namePart);
 	Optional<Product> findByName(String name);
     boolean existsByName(String name);
+    // NEDEN: SKU benzersizliğini servis katmanında kontrol etmek için
+    boolean existsBySku(String sku);
 }
 
 

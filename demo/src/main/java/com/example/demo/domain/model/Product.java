@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 
 import lombok.Data;
@@ -39,4 +40,17 @@ public class Product {
     @Column(name = "created_at",nullable = false)
     private Instant createdAt;
     
+    //Ürün Kodu
+    @Column(name = "sku", length = 64, unique = true)
+    private String sku;
+
+    
+    @Lob
+    @Column(name = "description")
+    private String description;
+
+    
+    @Lob
+    @Column(name = "metadata")
+    private String metadata;
 }

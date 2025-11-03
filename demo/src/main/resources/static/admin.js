@@ -62,7 +62,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   createBtn.addEventListener('click', async ()=>{
     try{
-      const body = { name: pName.value.trim(), price: Number(pPrice.value), stock: Number(pStock.value) };
+
+      const body = {
+        name: pName.value.trim(),
+        price: Number(pPrice.value),
+        stock: Number(pStock.value),
+        sku: (document.getElementById('pSku')?.value || '').trim() || null,
+        description: document.getElementById('pDesc')?.value || null,
+        metadata: document.getElementById('pMeta')?.value || null
+      };
+
       const resp = await jsonFetch('/api/admin/products', { method:'POST', body: JSON.stringify(body) });
       formInfo.textContent = `Eklendi (id=${resp.id})`;
       editingId = null; updateBtn.disabled = true;
@@ -77,7 +86,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const body = {
         name: pName.value.trim() || undefined,
         price: pPrice.value ? Number(pPrice.value) : undefined,
-        stock: pStock.value ? Number(pStock.value) : undefined
+        stock: pStock.value ? Number(pStock.value) : undefined,
+        sku: (document.getElementById('pSku')?.value || undefined),
+        description: (document.getElementById('pDesc')?.value || undefined),
+        metadata: (document.getElementById('pMeta')?.value || undefined)
       };
       await jsonFetch(`/api/admin/products/${editingId}`, { method:'PUT', body: JSON.stringify(body) });
       formInfo.textContent = `Güncellendi (id=${editingId})`;

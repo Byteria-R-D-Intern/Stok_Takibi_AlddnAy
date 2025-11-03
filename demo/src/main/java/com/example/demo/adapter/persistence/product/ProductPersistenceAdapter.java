@@ -32,6 +32,10 @@ public class ProductPersistenceAdapter implements ProductRepository {
 
 	@Override
 	public void deleteById(Long id) { jpa.deleteById(id); }
+
+    // NEDEN: SKU benzersizliği kontrolü JPA'ya delege edilir
+    @Override
+    public boolean existsBySku(String sku) { return jpa.existsBySku(sku); }
 }
 
 

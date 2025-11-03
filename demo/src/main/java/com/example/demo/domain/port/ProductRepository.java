@@ -10,6 +10,8 @@ public interface ProductRepository {
 	List<Product> findAll();
 	List<Product> findByNameContains(String namePart);
     boolean existsByName(String name);
+    // NEDEN: SKU benzersizliği için port seviyesinde kontrol
+    boolean existsBySku(String sku);
     void deleteById(Long id);
 }
 

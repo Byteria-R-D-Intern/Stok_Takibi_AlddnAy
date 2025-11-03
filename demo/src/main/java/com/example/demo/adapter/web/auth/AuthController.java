@@ -37,16 +37,22 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "Giriş yap", description = "Email/şifre ile giriş ve JWT üretimi")
     public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest req) {
-		Optional<String> token = userUseCase.login(req.email, req.password);
+        // NEDEN: Pasif kullanıcıların girişini 403 ile engelle
+        var uOpt = userUseCase.getByEmail(req.email);
+        if (uOpt.isPresent() && !uOpt.get().isActive()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    
+        Optional<String> token = userUseCase.login(req.email, req.password);
+    
         return token.map(t -> {
-                    
                     Long actorId = null;
                     try { actorId = tokenProvider.getUserId(t); } catch (Exception ignored) {}
                     auditLogUseCase.log(actorId, "user", actorId, "login", "successful login", null);
                     return ResponseEntity.ok(new TokenResponse(t));
                 })
-					.orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
-	}
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+    }
 
     @PostMapping("/register")
     @Operation(summary = "Kayıt ol", description = "Yeni kullanıcı oluştur ve JWT döndür")
@@ -67,6 +73,8 @@ public class AuthController {
                 })
 					.orElseGet(() -> ResponseEntity.badRequest().build());
 	}
+
+    
 
 	// DTOlar
     public static class LoginRequest {
